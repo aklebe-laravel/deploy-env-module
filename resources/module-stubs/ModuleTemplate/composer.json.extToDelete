@@ -1,0 +1,31 @@
+{
+    "name": "${{module_vendor_name}}/${{module_name_lower}}-module",
+    "type": "laravel-module",
+    "description": "",
+    "authors": [
+        {
+            "name": "${{module_author_name}}",
+            "email": "${{module_author_email}}"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\${{module_name}}\\": "",
+            "Modules\\${{module_name}}\\database\\factories\\": "Database/Factories/",
+            "Modules\\${{module_name}}\\database\\seeders\\": "Database/Seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\${{module_name}}\\tests\\": "tests/"
+        }
+    }
+}

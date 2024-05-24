@@ -1,0 +1,45 @@
+<?php
+
+namespace Modules\${{module_name}}\app\Providers;
+
+use Modules\SystemBase\app\Providers\Base\ModuleBaseServiceProvider;
+
+class ${{module_name}}ServiceProvider extends ModuleBaseServiceProvider
+{
+    /**
+     * @var string $moduleName
+     */
+    protected string $moduleName = '${{module_name}}';
+
+    /**
+     * @var string $moduleNameLower
+     */
+    protected string $moduleNameLower = '${{module_name_lower}}';
+
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        parent::register();
+
+        $this->app->register(RouteServiceProvider::class);
+        $this->app->register(ScheduleServiceProvider::class);
+    }
+
+    /**
+     * Boot the application events.
+     *
+     * @return void
+     */
+    public function boot(): void
+    {
+        parent::boot();
+
+        // ...
+    }
+
+
+}
