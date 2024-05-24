@@ -95,7 +95,7 @@ class RequireBaseService extends BaseService
         $parser = app(ParserService::class);
 
         $placeHolders = [
-            'module_vendor_snake_name' => [
+            'module_vendor_name' => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentVendorName;
@@ -113,7 +113,7 @@ class RequireBaseService extends BaseService
                     return $this->currentNameGit;
                 },
             ],
-            'theme_vendor_snake_name'  => [
+            'theme_vendor_name'  => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentVendorName;
@@ -213,7 +213,7 @@ class RequireBaseService extends BaseService
         }
 
         // setup config data
-        $this->currentVendorName = data_get($addonTypeInfoData, 'vendor_snake_name', '');
+        $this->currentVendorName = data_get($addonTypeInfoData, 'vendor_name', '');
         $this->currentSnakeName = data_get($addonTypeInfoData, $this->addonType.'_snake_name', '');
         $this->currentStudlyName = data_get($addonTypeInfoData, 'studly_name', '');
         $this->currentNameGit = data_get($addonTypeInfoData, $this->addonType.'_snake_name_git', '');
