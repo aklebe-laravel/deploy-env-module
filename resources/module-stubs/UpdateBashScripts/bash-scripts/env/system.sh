@@ -34,6 +34,7 @@ destination_db_port="${{env name="DB_PORT"}}"
 destination_db_name="${{env name="DB_DATABASE"}}"
 destination_db_user="${{env name="DB_USERNAME"}}"
 destination_db_password="${{env name="DB_PASSWORD"}}"
+destination_app_name="${{env name="APP_NAME"}}"
 destination_mercy_root_path="${{base_path}}"
 
 # =============================================
