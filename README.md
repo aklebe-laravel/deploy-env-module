@@ -1,7 +1,7 @@
 ## Deploy Env
 
-A **required** module for [Mercy Scaffold Application](https://github.com/AKlebeLaravel/MercyScaffold.git)
-(or any based on it like [Jumble Sale](https://github.com/AKlebeLaravel/JumbleSale.git)).
+A **required** module for [Mercy Scaffold Application](https://github.com/aklebe-laravel/mercy-scaffold.git)
+(or any based on it like [Jumble Sale](https://github.com/aklebe-laravel/jumble-sale.git)).
 
 This module provides deployments for your environments using artisan.
 Configure tasks to fill database data, copy files, run artisan commands or prepare
