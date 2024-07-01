@@ -2,6 +2,7 @@
 
 namespace Modules\DeployEnv\app\Providers;
 
+use Modules\DeployEnv\app\Console\DeployEnvAutoImport;
 use Modules\DeployEnv\app\Console\DeployEnvBuildFrontend;
 use Modules\DeployEnv\app\Console\DeployEnvBuildMercyAssets;
 use Modules\DeployEnv\app\Console\DeployEnvClearCaches;
@@ -52,6 +53,7 @@ class DeployEnvServiceProvider extends ModuleBaseServiceProvider
             DeployEnvRequireDependencies::class,
             DeployEnvModuleInfo::class,
             DeployEnvDbImport::class,
+            DeployEnvAutoImport::class,
             DeployEnvFormer::class,
             DeployEnvUpdateBashScriptEnv::class,
         ]);
