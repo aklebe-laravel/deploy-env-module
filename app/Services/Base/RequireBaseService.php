@@ -95,37 +95,37 @@ class RequireBaseService extends BaseService
         $parser = app(ParserService::class);
 
         $placeHolders = [
-            'module_vendor_name' => [
+            'module_vendor_name'    => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentVendorName;
                 },
             ],
-            'module_snake_name'        => [
+            'module_snake_name'     => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentSnakeName;
                 },
             ],
-            'module_snake_name_git'    => [
+            'module_snake_name_git' => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentNameGit;
                 },
             ],
-            'theme_vendor_name'  => [
+            'theme_vendor_name'     => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentVendorName;
                 },
             ],
-            'theme_snake_name'         => [
+            'theme_snake_name'      => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentSnakeName;
                 },
             ],
-            'theme_snake_name_git'     => [
+            'theme_snake_name_git'  => [
                 'parameters' => [],
                 'callback'   => function (array $placeholderParameters, array $parameters, array $recursiveData) {
                     return $this->currentNameGit;
@@ -276,52 +276,20 @@ class RequireBaseService extends BaseService
             return true;
         }
 
-        // -------------------------------------------------
         // repository now exist and clean ...
-        // -------------------------------------------------
 
-        // fetch repo infos
-        $gitService->repositoryFetch();
-
-        // Git checkout part:
         // If no constraint branch or version is defined in config,
         // then no checkout() will performed!
-        if ($configRequiredConstraint = config('mercy-dependencies.required.git.'.$this->addonType.'s.'.$this->currentVendorName.'/'.$this->currentNameGit,
-            '')) {
-            // $this->debug("config required constraint: ".$configRequiredConstraint);
+        $configRequiredConstraint = config('mercy-dependencies.required.git.'.$this->addonType.'s.'.$this->currentVendorName.'/'.$this->currentNameGit,
+            '');
 
-            if ($checkoutName = $gitService->findBestTagOrBranch($configRequiredConstraint)) {
-                $this->debug(sprintf("Checkout '%s' ...", $checkoutName));
-                if (!$gitService->repositoryCheckout($checkoutName)) {
-                    $this->error(sprintf("Failed to checkout: %s", $checkoutName));
-                    $this->decrementIndent();
-                    return false;
-                }
-            } else {
-                $this->error(sprintf("Nothing matched to checkout with: %s", $configRequiredConstraint));
-            }
-        } else {
-            // theme/module was not defined
-            // $this->debug(sprintf("%s '%s' has no required config.", $this->addonType, $this->currentSnakeName));
-        }
-
-        // get current branch
-        $currentBranch = $gitService->getCurrentBranch();
-
-        if (data_get($this->allowedProcesses, 'git_pull', false)) {
-            // Pull current branch (or just new checked out branch/version)
-            if (!$gitService->repositoryPull()) {
-                $this->error(sprintf("Unable to pull branch: %s", $currentBranch));
-                $this->decrementIndent();
-                return false;
-            }
-
-            // success message
-            // $this->debug(sprintf("Repository pulled from '%s' successfully.", $currentBranch));
-
-        } else {
-            $this->debug("Process 'git pull' not allowed. Skipped.");
-        }
+        // Git pull will not work in some cases (checked out tags)
+        // Processing the following steps:
+        // 1) git fetch
+        // 2) git checkout
+        // 3) git merge
+        $gitService->repositoryFetchAndMerge($configRequiredConstraint,
+            data_get($this->allowedProcesses, 'git_pull', false));
 
         // new repository content?
         if ($gitService->repositoryJustUpdated) {
