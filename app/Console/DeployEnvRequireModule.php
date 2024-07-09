@@ -21,7 +21,7 @@ class DeployEnvRequireModule extends DeployEnvBase
      *
      * @var string
      */
-    protected $description = 'Require a module or update all modules already installed and additional registered in config mercy-dependencies';
+    protected $description = 'Require comma seperated modules or update all modules already installed and additional registered in config mercy-dependencies';
 
     /**
      * Execute the console command.
@@ -33,7 +33,11 @@ class DeployEnvRequireModule extends DeployEnvBase
     {
         $automaticProcesses = !$this->option('no-auto');
 
-        $moduleName = $this->argument('module_name');
+        // default one item with null for all modules and themes at once
+        $moduleNames = $this->argument('module_name') ?? [null];
+        if (!is_array($moduleNames)) {
+            $moduleNames = array_map('trim', explode(",", $moduleNames));
+        }
 
         // debug enable/disable (BEFORE services allocated!)
         app('system_base')->switchEnvDebug($this->option('debug'));
@@ -48,27 +52,31 @@ class DeployEnvRequireModule extends DeployEnvBase
 
         $requireModuleService->allowProcess('dev_mode', $this->option('dev-mode'));
 
-        $this->printHeadLine("Creating/updating Module".($moduleName ? " $moduleName" : 's'));
+        foreach ($moduleNames as $moduleName) {
+            $this->printHeadLine("Creating/updating Module".($moduleName ? " $moduleName" : 's'));
 
-        if ($requireModuleService->requireItemByName($moduleName)) {
+            if ($requireModuleService->requireItemByName($moduleName)) {
 
-            if ($updatedModulesCount = count($requireModuleService->changedRepositories)) {
-                $this->info(sprintf("%s modules were updated.", $updatedModulesCount));
-                $this->line(print_r($requireModuleService->changedRepositories, true));
+                if ($updatedModulesCount = count($requireModuleService->changedRepositories)) {
+                    $this->info(sprintf("%s modules were updated.", $updatedModulesCount));
+                    $this->line(print_r($requireModuleService->changedRepositories, true));
+                } else {
+                    $this->info("Everything was already up-to-date.");
+                }
+
             } else {
-                $this->info("Everything was already up-to-date.");
+                $this->error("Module requirement failed!");
+                return Command::FAILURE;
             }
-
-        } else {
-            $this->error("Module requirement failed!");
-            return Command::FAILURE;
         }
 
         // since v11 composer dump-autoload is needed for new modules
-        if ($this->composerDumpAutoLoadNeededForNewModules) {
-            $r = $this->runProcessComposerDump();
-            if ($r->failed()) {
-                return Command::FAILURE;
+        if ($automaticProcesses) {
+            if ($this->composerDumpAutoLoadNeededForNewModules) {
+                $r = $this->runProcessComposerDump();
+                if ($r->failed()) {
+                    return Command::FAILURE;
+                }
             }
         }
 

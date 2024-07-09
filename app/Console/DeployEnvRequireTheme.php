@@ -21,7 +21,7 @@ class DeployEnvRequireTheme extends DeployEnvBase
      *
      * @var string
      */
-    protected $description = 'Require a Theme or update all themes already installed and additional registered in config mercy-dependencies';
+    protected $description = 'Require comma seperated themes or update all themes already installed and additional registered in config mercy-dependencies';
 
     /**
      * Execute the console command.
@@ -33,7 +33,11 @@ class DeployEnvRequireTheme extends DeployEnvBase
     {
         $automaticProcesses = !$this->option('no-auto');
 
-        $themeName = $this->argument('theme_name');
+        // default one item with null for all modules and themes at once
+        $themeNames = $this->argument('theme_name') ?? [null];
+        if (!is_array($themeNames)) {
+            $themeNames = array_map('trim', explode(",", $themeNames));
+        }
 
         // debug enable/disable (BEFORE services allocated!)
         app('system_base')->switchEnvDebug($this->option('debug'));
@@ -48,19 +52,22 @@ class DeployEnvRequireTheme extends DeployEnvBase
 
         $requireThemeService->allowProcess('dev_mode', $this->option('dev-mode'));
 
-        $this->printHeadLine("Creating/updating Theme".($themeName ? " $themeName" : 's'));
+        foreach ($themeNames as $themeName) {
+            $this->printHeadLine("Creating/updating Theme".($themeName ? " $themeName" : 's'));
 
-        if ($requireThemeService->requireItemByName($themeName)) {
+            if ($requireThemeService->requireItemByName($themeName)) {
 
-            if ($updatedThemesCount = count($requireThemeService->changedRepositories)) {
-                $this->info(sprintf("%s themes were updated.", $updatedThemesCount));
-                $this->line(print_r($requireThemeService->changedRepositories, true));
+                if ($updatedThemesCount = count($requireThemeService->changedRepositories)) {
+                    $this->info(sprintf("%s themes were updated.", $updatedThemesCount));
+                    $this->line(print_r($requireThemeService->changedRepositories, true));
+                } else {
+                    $this->info("Everything was already up-to-date.");
+                }
+
             } else {
-                $this->info("Everything was already up-to-date.");
+                $this->error("Theme requirement failed!");
+                return Command::FAILURE;
             }
-
-        } else {
-            $this->error("Theme requirement failed!");
         }
 
         return Command::SUCCESS;
