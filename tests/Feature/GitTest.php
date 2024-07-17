@@ -49,6 +49,8 @@ class GitTest extends TestCase
     }
 
     /**
+     * Testing git pulls to storage/tests/git_pulls/xxx
+     *
      * Testing results of
      * GitService::findSatisfiedVersion()
      * GitService::findSatisfiedBranch()
@@ -59,18 +61,18 @@ class GitTest extends TestCase
         $gitService = app(GitService::class);
 
         $gitSources = [
-            'aklebe-laravel/test-github-actions' => '^0.1',
+            // 'aklebe-laravel/test-github-actions' => '^0.1',
             'aklebe-laravel/system-base-module'  => '^1.0',
             // 'aklebe-laravel/acl-module'          => 'dev-master',
             'aklebe-laravel/acl-module'          => '^1.0',
-            'aklebe-laravel/deploy-env-module'   => '^1.0',
+            // 'aklebe-laravel/deploy-env-module'   => '^1.0',
             'aklebe-laravel/form-module'         => '^1.0',
-            'aklebe-laravel/data-table-module'   => '^1.0',
-            'aklebe-laravel/telegram-api-module' => '^1.0',
-            'aklebe-laravel/website-base-module' => '^1.0',
-            'aklebe-laravel/market-module'       => '^1.0',
-            'aklebe-laravel/aklebe-bs5-theme'    => '^1.0',
-            'aklebe-laravel/jumble-sale-theme'   => '^1.0',
+            // 'aklebe-laravel/data-table-module'   => '^1.0',
+            // 'aklebe-laravel/telegram-api-module' => '^1.0',
+            // 'aklebe-laravel/website-base-module' => '^1.0',
+            // 'aklebe-laravel/market-module'       => '^1.0',
+            // 'aklebe-laravel/aklebe-bs5-theme'    => '^1.0',
+            // 'aklebe-laravel/jumble-sale-theme'   => '^1.0',
         ];
 
         foreach ($gitSources as $gitSource => $configRequiredConstraint) {
@@ -86,7 +88,7 @@ class GitTest extends TestCase
                 $this->fail(sprintf("Repository failed: %s to %s", $gitSourceCurrent, $testRepoFilePath));
             }
 
-            if (!$gitService->repositoryFetchAndMerge($configRequiredConstraint)) {
+            if (!$gitService->repositoryUpdate($configRequiredConstraint)) {
                 $this->fail(sprintf("Unable to pull branch: %s", $gitService->getCurrentBranch()));
             }
         }

@@ -288,7 +288,7 @@ class RequireBaseService extends BaseService
         // 1) git fetch
         // 2) git checkout
         // 3) git merge
-        $gitService->repositoryFetchAndMerge($configRequiredConstraint,
+        $gitService->repositoryUpdate($configRequiredConstraint,
             data_get($this->allowedProcesses, 'git_pull', false));
 
         // new repository content?
