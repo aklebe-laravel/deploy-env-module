@@ -52,12 +52,14 @@ class DeployEnvRequireModule extends DeployEnvBase
 
         $requireModuleService->allowProcess('dev_mode', $this->option('dev-mode'));
 
+        $changesMade = false;
         foreach ($moduleNames as $moduleName) {
             $this->printHeadLine("Creating/updating Module".($moduleName ? " $moduleName" : 's'));
 
             if ($requireModuleService->requireItemByName($moduleName)) {
 
                 if ($updatedModulesCount = count($requireModuleService->changedRepositories)) {
+                    $changesMade = true;
                     $this->info(sprintf("%s modules were updated.", $updatedModulesCount));
                     $this->line(print_r($requireModuleService->changedRepositories, true));
                 } else {
@@ -71,7 +73,7 @@ class DeployEnvRequireModule extends DeployEnvBase
         }
 
         // since v11 composer dump-autoload is needed for new modules
-        if ($automaticProcesses) {
+        if ($automaticProcesses && $changesMade) {
             if ($this->composerDumpAutoLoadNeededForNewModules) {
                 $r = $this->runProcessComposerDump();
                 if ($r->failed()) {
