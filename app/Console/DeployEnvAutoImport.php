@@ -5,8 +5,7 @@ namespace Modules\DeployEnv\app\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
-use Modules\DeployEnv\app\Events\ImportRow;
-use Modules\SystemBase\app\Services\Csv;
+use Modules\DeployEnv\app\Events\ImportContent;
 
 class DeployEnvAutoImport extends DeployEnvBase
 {
@@ -58,27 +57,7 @@ class DeployEnvAutoImport extends DeployEnvBase
             $type = strtolower($type);
             $type = Str::singular($type);
 
-            // prepare to import
-            // Log::debug(sprintf("File: %s", $sourcePathInfo['basename']));
-            $csv = app(Csv::class);
-            $csv->init($sourcePathInfo['dirname'], $sourcePathInfo['basename']);
-            $rowsImported = 0;
-            if (!$csv->load(function ($row) use ($type, $sourcePathInfo, &$rowsImported) {
-
-                // do the work ...
-                // for products see: \Modules\Market\app\Listeners\ImportRow
-                if (ImportRow::dispatch($type, $sourcePathInfo, $row)) {
-                    $rowsImported++;
-                }
-
-            })) {
-                $this->getOutput()->error(sprintf("Unable to load file: %s", $file));
-                return false;
-            }
-
-            $this->getOutput()->text(sprintf("Imported: %s rows of '%s' from file '%s'", $rowsImported, $type,
-                $sourcePathInfo['basename']));
-
+            ImportContent::dispatch($type, $sourcePathInfo);
             return true;
 
         }, regexWhitelist: [$fileRegEx], addDelimiters: self::regExSeparator);

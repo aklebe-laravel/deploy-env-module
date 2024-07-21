@@ -2,6 +2,8 @@
 
 namespace Modules\DeployEnv\app\Listeners;
 
+use Modules\DeployEnv\app\Events\ImportRow as ImportRowEvent;
+
 class ImportRow
 {
     /**
@@ -26,7 +28,7 @@ class ImportRow
      * @param $t
      * @return bool
      */
-    protected function isRequiredType($t):bool
+    protected function isRequiredType($t): bool
     {
         return in_array($t, $this->requiredTypesSingular);
     }
@@ -34,10 +36,10 @@ class ImportRow
     /**
      * Handle the event.
      *
-     * @param  \Modules\DeployEnv\app\Events\ImportRow  $event
+     * @param  ImportRowEvent  $event
      * @return bool  false to stop all following listeners
      */
-    public function handle(\Modules\DeployEnv\app\Events\ImportRow $event): bool
+    public function handle(ImportRowEvent $event): bool
     {
         return true;
     }
@@ -45,10 +47,10 @@ class ImportRow
     /**
      * If source exists, dest will set with return from callback()
      *
-     * @param  array  $source
-     * @param  array  $dest
-     * @param  string  $sourceKey
-     * @param  string|null  $destKey
+     * @param  array          $source
+     * @param  array          $dest
+     * @param  string         $sourceKey
+     * @param  string|null    $destKey
      * @param  callable|null  $callback
      * @return bool
      */
@@ -71,11 +73,11 @@ class ImportRow
     /**
      * If source exists, dest will simply set with source value
      *
-     * @param  array  $source
-     * @param  array  $dest
-     * @param  string  $sourceKey
+     * @param  array        $source
+     * @param  array        $dest
+     * @param  string       $sourceKey
      * @param  string|null  $destKey
-     * @param  mixed|null  $default
+     * @param  mixed|null   $default
      * @return bool
      */
     protected function addBasicColumnIfPresent(array &$source, array &$dest, string $sourceKey, ?string $destKey = null,
@@ -128,4 +130,5 @@ class ImportRow
 
         return $value;
     }
+
 }

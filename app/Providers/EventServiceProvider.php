@@ -4,7 +4,6 @@ namespace Modules\DeployEnv\app\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Modules\DeployEnv\app\Events\DeployEnvFormer;
-use Modules\DeployEnv\app\Events\ImportRow;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -14,11 +13,8 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
-        DeployEnvFormer::class              => [
+        DeployEnvFormer::class => [
             \Modules\DeployEnv\app\Listeners\DeployEnvFormer::class,
-        ],
-        ImportRow::class=>[
-            \Modules\DeployEnv\app\Listeners\ImportRow::class,
         ],
     ];
 
