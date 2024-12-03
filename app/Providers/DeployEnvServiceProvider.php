@@ -64,7 +64,7 @@ class DeployEnvServiceProvider extends ModuleBaseServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         parent::register();
 

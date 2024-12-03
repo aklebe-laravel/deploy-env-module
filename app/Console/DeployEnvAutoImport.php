@@ -14,7 +14,7 @@ class DeployEnvAutoImport extends DeployEnvBase
      *
      * @var string
      */
-    protected $signature = 'deploy-env:auto-import {fileRegEx} {--dir=} {--type=} {--db_name=}';
+    protected $signature = 'deploy-env:auto-import {fileRegEx} {--root=} {--dir=} {--type=} {--db_name=}';
 
     /**
      * @var string
@@ -36,7 +36,11 @@ class DeployEnvAutoImport extends DeployEnvBase
     public function handle()
     {
         $fileRegEx = $this->argument('fileRegEx');
-        $dir = storage_path('app/import');
+        if ($rootOption = $this->option('root')) {
+            $dir = $rootOption;
+        } else {
+            $dir = storage_path('app/import');
+        }
         if ($dirOption = $this->option('dir')) {
             $dir = realpath($dir.DIRECTORY_SEPARATOR.$dirOption);
         }
@@ -57,6 +61,9 @@ class DeployEnvAutoImport extends DeployEnvBase
             $type = strtolower($type);
             $type = Str::singular($type);
 
+            // for example see:
+            // \Modules\Market\app\Listeners\ImportRowProduct
+            // \Modules\Market\app\Listeners\ImportContentMarket
             ImportContent::dispatch($type, $sourcePathInfo);
             return true;
 
