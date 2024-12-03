@@ -102,6 +102,7 @@ class ImportContent
             }
 
             // Import row event  ...
+            // for example see: \Modules\Market\app\Listeners\ImportRowProduct
             ImportRow::dispatch($event->type, $event->sourcePathInfo, $row);
             $event->currentRowNumber++;
             return true;
