@@ -5,33 +5,30 @@ namespace Modules\DeployEnv\app\Events;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Modules\DeployEnv\app\Events\ImportContent as ImportContentEvent;
 
 class ImportRow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @var string
-     */
-    public string $type = '';
-
-    /**
-     * @var array
-     */
-    public array $sourcePathInfo = [];
-
-    /**
+     * Contains columns of the row
+     *
      * @var array
      */
     public array $row = [];
 
     /**
+     * @var ImportContent
+     */
+    public ImportContentEvent $importContentEvent;
+
+    /**
      * Create a new event instance.
      */
-    public function __construct(string $type, array $sourcePathInfo, array $row)
+    public function __construct(ImportContent $importContentEvent, array $row)
     {
-        $this->type = $type;
-        $this->sourcePathInfo = $sourcePathInfo;
+        $this->importContentEvent = $importContentEvent;
         $this->row = $row;
     }
 }
