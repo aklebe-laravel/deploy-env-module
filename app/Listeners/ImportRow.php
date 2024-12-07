@@ -26,6 +26,7 @@ class ImportRow
 
     /**
      * @param $t
+     *
      * @return bool
      */
     protected function isRequiredType($t): bool
@@ -37,6 +38,7 @@ class ImportRow
      * Handle the event.
      *
      * @param  ImportRowEvent  $event
+     *
      * @return bool  false to stop all following listeners
      */
     public function handle(ImportRowEvent $event): bool
@@ -52,10 +54,10 @@ class ImportRow
      * @param  string         $sourceKey
      * @param  string|null    $destKey
      * @param  callable|null  $callback
+     *
      * @return bool
      */
-    protected function addCustomColumnIfPresent(array &$source, array &$dest, string $sourceKey,
-        ?string $destKey = null, callable $callback = null): bool
+    protected function addCustomColumnIfPresent(array &$source, array &$dest, string $sourceKey, ?string $destKey = null, callable $callback = null): bool
     {
         if (!isset($source[$sourceKey])) {
             return false;
@@ -78,14 +80,15 @@ class ImportRow
      * @param  string       $sourceKey
      * @param  string|null  $destKey
      * @param  mixed|null   $default
+     *
      * @return bool
      */
-    protected function addBasicColumnIfPresent(array &$source, array &$dest, string $sourceKey, ?string $destKey = null,
-        mixed $default = null): bool
+    protected function addBasicColumnIfPresent(array &$source, array &$dest, string $sourceKey, ?string $destKey = null, mixed $default = null): bool
     {
         return $this->addCustomColumnIfPresent($source, $dest, $sourceKey, $destKey,
             function () use (&$source, $sourceKey, $default) {
                 $v = data_get($source, $sourceKey, $default);
+
                 return $this->typeCast($sourceKey, $v);
             });
     }
@@ -93,6 +96,7 @@ class ImportRow
     /**
      * @param $column
      * @param $value
+     *
      * @return mixed
      */
     protected function typeCast($column, $value): mixed

@@ -21,11 +21,6 @@ class ImportContent
     public array $sourcePathInfo = [];
 
     /**
-     * @var int
-     */
-    public int $currentRowNumber = 0;
-
-    /**
      * Create a new event instance.
      */
     public function __construct(string $type, array $sourcePathInfo)
