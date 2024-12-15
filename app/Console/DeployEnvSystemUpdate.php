@@ -25,7 +25,7 @@ class DeployEnvSystemUpdate extends DeployEnvBase
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         return $this->runProcessSystemUpdate();
     }

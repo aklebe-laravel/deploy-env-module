@@ -17,6 +17,11 @@ class ImportRow
     protected array $requiredTypesSingular = [];
 
     /**
+     * @var ImportRowEvent
+     */
+    public ImportRowEvent $event;
+
+    /**
      * Create the event listener.
      */
     public function __construct()
@@ -43,6 +48,8 @@ class ImportRow
      */
     public function handle(ImportRowEvent $event): bool
     {
+        $this->event = $event;
+
         return true;
     }
 

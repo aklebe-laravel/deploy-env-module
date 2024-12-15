@@ -122,7 +122,7 @@ class ImportContent
             return false;
         }
 
-        Log::info(sprintf("Imported: %s/%s rows of '%s' from file '%s'", $importCount, $csv->currentRowNumber - 1, $event->type, $event->sourcePathInfo['basename']));
+        Log::info(sprintf("Import processed %s/%s rows of '%s' from file '%s'", $importCount, $csv->currentRowNumber - 1, $event->type, $event->sourcePathInfo['basename']));
 
         return true;
     }

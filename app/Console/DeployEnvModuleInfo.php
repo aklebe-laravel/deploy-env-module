@@ -2,11 +2,10 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use CzProject\GitPhp\GitException;
-use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\SystemBase\app\Services\ModuleService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvModuleInfo extends DeployEnvBase
 {
@@ -28,9 +27,8 @@ class DeployEnvModuleInfo extends DeployEnvBase
      * Execute the console command.
      *
      * @return int
-     * @throws GitException
      */
-    public function handle()
+    public function handle(): int
     {
         /** @var ModuleService $moduleService */
         $moduleService = app(ModuleService::class);
@@ -45,7 +43,7 @@ class DeployEnvModuleInfo extends DeployEnvBase
             }
         }
 
-        return Command::SUCCESS;
+        return CommandResult::SUCCESS;
     }
 
 }

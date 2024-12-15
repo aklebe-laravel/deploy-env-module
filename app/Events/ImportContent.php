@@ -21,11 +21,17 @@ class ImportContent
     public array $sourcePathInfo = [];
 
     /**
+     * @var int|null
+     */
+    public ?int $forceUserId = null;
+
+    /**
      * Create a new event instance.
      */
-    public function __construct(string $type, array $sourcePathInfo)
+    public function __construct(string $type, array $sourcePathInfo, ?int $forceUserId = null)
     {
         $this->type = $type;
         $this->sourcePathInfo = $sourcePathInfo;
+        $this->forceUserId = $forceUserId;
     }
 }
