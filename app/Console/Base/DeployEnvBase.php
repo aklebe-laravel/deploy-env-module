@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\URL;
 use Psr\Log\LogLevel;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 /**
  * Every DeployEnv command should extend this class
@@ -37,6 +38,7 @@ class DeployEnvBase extends Command
     /**
      * Only needed if $processOutput is set to 'callback'.
      * call $this->processOutputCallback(string $type, string $output)
+     *
      * @var callable
      */
     public $processOutputCallback = null;
@@ -50,7 +52,7 @@ class DeployEnvBase extends Command
      * Print out and log the message.
      * If $message is array or object, the output will be formatted.
      *
-     * @param  mixed  $message
+     * @param  mixed   $message
      * @param  string  $logLevel
      *
      * @return void
@@ -67,6 +69,7 @@ class DeployEnvBase extends Command
 
     /**
      * @param  bool  $handleMaintenanceMode
+     *
      * @return int
      */
     public function runProcessSystemUpdate(bool $handleMaintenanceMode = true): int
@@ -100,7 +103,7 @@ class DeployEnvBase extends Command
             // }
             $currentUpdateResult = $this->runProcessComposerUpdate();
             if ($currentUpdateResult->failed()) {
-                return Command::FAILURE;
+                return CommandResult::FAILURE;
             }
         } else {
             $this->warn("Don't forget update composer manually!");
@@ -110,7 +113,7 @@ class DeployEnvBase extends Command
         if ($this->confirm("Starting npm update?", true)) {
             $currentUpdateResult = $this->runProcessNpmUpdate();
             if ($currentUpdateResult->failed()) {
-                return Command::FAILURE;
+                return CommandResult::FAILURE;
             }
         } else {
             $this->warn("Don't forget update npm manually!");
@@ -120,7 +123,7 @@ class DeployEnvBase extends Command
         //        if ($this->confirm("Clear caches?", true)) {
         //            $currentUpdateResult = $this->runProcessArtisanCacheClear();
         //            if ($currentUpdateResult->failed()) {
-        //                return Command::FAILURE;
+        //                return CommandResult::FAILURE;
         //            }
         //        }
 
@@ -128,7 +131,7 @@ class DeployEnvBase extends Command
         if ($this->confirm("Starting artisan migrate?", true)) {
             $currentUpdateResult = $this->runProcessArtisanMigrate();
             if ($currentUpdateResult->failed()) {
-                return Command::FAILURE;
+                return CommandResult::FAILURE;
             }
         } else {
             $this->warn("Don't forget to run 'php artisan migrate' manually!");
@@ -138,7 +141,7 @@ class DeployEnvBase extends Command
         if ($this->confirm("Starting modules deployment env update?", true)) {
             $currentUpdateResult = $this->runProcessDeployEnvUpdate();
             if ($currentUpdateResult->failed()) {
-                return Command::FAILURE;
+                return CommandResult::FAILURE;
             }
         } else {
             $this->warn("Don't forget to run 'php artisan deploy-env:terraform-modules' manually!");
@@ -148,8 +151,12 @@ class DeployEnvBase extends Command
         if ($this->confirm("Starting rebuild frontend?", true)) {
             $currentUpdateResult = $this->runProcessArtisanBuildFrontend();
             if ($currentUpdateResult->failed()) {
-                return Command::FAILURE;
+                return CommandResult::FAILURE;
             }
+        }
+
+        if (!$this->option('dev-mode')) {
+            $this->runProcessArtisanOptimize();
         }
 
         if ($handleMaintenanceMode && !$this->option('dev-mode')) {
@@ -162,11 +169,13 @@ class DeployEnvBase extends Command
 
         $this->printHeadLine('System update finished successfully!');
         $this->comment(number_format(app('system_base')->getExecutionTime(LARAVEL_START), 2, '.', '').' sec');
-        return Command::SUCCESS;
+
+        return CommandResult::SUCCESS;
     }
 
     /**
      * @param $title
+     *
      * @return void
      */
     protected function printHeadLine($title): void
@@ -182,7 +191,8 @@ class DeployEnvBase extends Command
 
     /**
      * @param  string  $cmd
-     * @param  array  $options
+     * @param  array   $options
+     *
      * @return ProcessResult|ContractsProcessResult
      */
     public function runProcess(string $cmd, array $options = []): ProcessResult|ContractsProcessResult
@@ -203,6 +213,7 @@ class DeployEnvBase extends Command
         }
 
         $this->line("");
+
         return $result;
     }
 
@@ -211,6 +222,7 @@ class DeployEnvBase extends Command
      *
      * @param  string  $type
      * @param  string  $output
+     *
      * @return void
      */
     protected function printProcessOutput(string $type, string $output): void
@@ -239,6 +251,7 @@ class DeployEnvBase extends Command
         if (!$this->option('dev-mode')) {
             $options[] = '--no-dev';
         }
+
         return $this->runProcess('composer update', $options);
     }
 
@@ -248,6 +261,7 @@ class DeployEnvBase extends Command
     public function runProcessArtisanClearCompiled(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('clear-compiled');
+
         return $this->runProcess($cmd);
     }
 
@@ -257,6 +271,7 @@ class DeployEnvBase extends Command
     public function runProcessArtisanOptimize(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('optimize');
+
         return $this->runProcess($cmd);
     }
 
@@ -266,6 +281,7 @@ class DeployEnvBase extends Command
     public function runProcessComposerDump(): ProcessResult|ContractsProcessResult
     {
         $options = [];
+
         return $this->runProcess('composer dump-autoload', $options);
     }
 
@@ -287,7 +303,8 @@ class DeployEnvBase extends Command
 
     /**
      * @param  string  $cmd
-     * @param  array  $options
+     * @param  array   $options
+     *
      * @return string
      */
     public static function addCommandOptions(string $cmd, array $options = []): string
@@ -306,7 +323,8 @@ class DeployEnvBase extends Command
 
     /**
      * @param  string  $cmd
-     * @param  array  $options  can be assoc indexed or just have values or mixed
+     * @param  array   $options  can be assoc indexed or just have values or mixed
+     *
      * @return string
      */
     protected function getFinalArtisanProcessCmd(string $cmd, array $options = []): string
@@ -325,6 +343,7 @@ class DeployEnvBase extends Command
     public function runProcessArtisanBuildFrontend(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('deploy-env:build-frontend');
+
         return $this->runProcess($cmd);
     }
 
@@ -334,6 +353,7 @@ class DeployEnvBase extends Command
     public function runProcessArtisanMigrate(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('migrate');
+
         return $this->runProcess($cmd);
     }
 
@@ -343,6 +363,7 @@ class DeployEnvBase extends Command
     public function runProcessDeployEnvUpdate(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('deploy-env:terraform-modules');
+
         return $this->runProcess($cmd);
     }
 
@@ -353,12 +374,25 @@ class DeployEnvBase extends Command
     {
         $cmd = $this->getFinalArtisanProcessCmd('cache:clear');
         $result1 = $this->runProcess($cmd);
+
+        //// This should clear "bootstrap/cache", but it didn't
+        //$cmd = $this->getFinalArtisanProcessCmd('optimize:clear');
+        //$this->runProcess($cmd);
+
+        // remove php files in "bootstrap/cache" folder because "cache:clear" will not remove everything
+        app('system_base_file')->runDirectoryFiles(base_path("bootstrap/cache"), function (string $file, array $sourcePathInfo) {
+            if ($sourcePathInfo['extension'] === 'php') {
+                unlink($file);
+            }
+        });
+
         $cmd = $this->getFinalArtisanProcessCmd('route:clear');
-        $result2 = $this->runProcess($cmd);
+        $this->runProcess($cmd);
         $cmd = $this->getFinalArtisanProcessCmd('config:clear');
-        $result3 = $this->runProcess($cmd);
+        $this->runProcess($cmd);
         $cmd = $this->getFinalArtisanProcessCmd('view:clear');
-        $result4 = $this->runProcess($cmd);
+        $this->runProcess($cmd);
+
         return $result1;
     }
 
@@ -368,6 +402,7 @@ class DeployEnvBase extends Command
     public function runProcessArtisanViewCache(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('view:cache');
+
         return $this->runProcess($cmd);
     }
 
@@ -381,6 +416,7 @@ class DeployEnvBase extends Command
             $this->secretMaintenanceKey = uniqid('maintenance-');
             $cmd = $this->getFinalArtisanProcessCmd('down', ['--secret' => $this->secretMaintenanceKey]);
             $result = $this->runProcess($cmd);
+
             return $result->successful();
         }
 
@@ -388,20 +424,23 @@ class DeployEnvBase extends Command
     }
 
     /**
-     * @param  bool  $onlyWhenOwnShotdown
+     * @param  bool  $onlyWhenOwnShutdown
+     *
      * @return bool
      */
-    public function disableMaintenanceMode(bool $onlyWhenOwnShotdown = true): bool
+    public function disableMaintenanceMode(bool $onlyWhenOwnShutdown = true): bool
     {
         if (!app()->isDownForMaintenance()) {
             $this->secretMaintenanceKey = '';
+
             return true;
         }
 
-        if (!$onlyWhenOwnShotdown || $this->secretMaintenanceKey) {
+        if (!$onlyWhenOwnShutdown || $this->secretMaintenanceKey) {
             $cmd = $this->getFinalArtisanProcessCmd('up');
             $result = $this->runProcess($cmd);
             $this->secretMaintenanceKey = '';
+
             return $result->successful();
         }
 
@@ -435,6 +474,7 @@ class DeployEnvBase extends Command
                 $result[] = '--'.$k;
             }
         }
+
         return $result;
     }
 

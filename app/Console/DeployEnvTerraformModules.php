@@ -2,9 +2,9 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\DeployEnv\app\Services\DeploymentService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvTerraformModules extends DeployEnvBase
 {
@@ -27,7 +27,7 @@ class DeployEnvTerraformModules extends DeployEnvBase
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $moduleName = $this->option('module_name') ?: '*';
         $moduleVersion = $this->option('module_version') ?: '';
@@ -39,10 +39,10 @@ class DeployEnvTerraformModules extends DeployEnvBase
             $this->info("Deployment successful!");
         } else {
             $this->error("Deployment failed!");
-            return Command::FAILURE;
+            return CommandResult::FAILURE;
         }
 
-        return Command::SUCCESS;
+        return CommandResult::SUCCESS;
     }
 
 }

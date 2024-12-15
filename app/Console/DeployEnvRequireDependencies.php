@@ -2,9 +2,8 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use CzProject\GitPhp\GitException;
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvRequireDependencies extends DeployEnvBase
 {
@@ -26,9 +25,8 @@ class DeployEnvRequireDependencies extends DeployEnvBase
      * Execute the console command.
      *
      * @return int
-     * @throws GitException
      */
-    public function handle()
+    public function handle(): int
     {
         // add options to exists
         $options = array_merge($this->getEnabledOptions(), ['--no-interaction']);
@@ -36,22 +34,22 @@ class DeployEnvRequireDependencies extends DeployEnvBase
         // first modules
         $r = $this->runProcess($this->getFinalArtisanProcessCmd('deploy-env:require-module', $options));
         if (!$r->successful()) {
-            return Command::FAILURE;
+            return CommandResult::FAILURE;
         }
 
         // themes after
         $r = $this->runProcess($this->getFinalArtisanProcessCmd('deploy-env:require-theme', $options));
         if (!$r->successful()) {
-            return Command::FAILURE;
+            return CommandResult::FAILURE;
         }
 
         // system update on success
         $r = $this->runProcess($this->getFinalArtisanProcessCmd('deploy-env:system-update', $options));
         if (!$r->successful()) {
-            return Command::FAILURE;
+            return CommandResult::FAILURE;
         }
 
-        return Command::SUCCESS;
+        return CommandResult::SUCCESS;
     }
 
 }

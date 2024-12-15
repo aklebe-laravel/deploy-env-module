@@ -71,6 +71,9 @@ class DeployEnvAutoImport extends DeployEnvBase
 
         }, regexWhitelist: [$fileRegEx], addDelimiters: self::regExSeparator);
 
+        //
+        app('system_base')->logExecutionTime("Seeded ".__METHOD__);
+
         return CommandResult::SUCCESS;
     }
 

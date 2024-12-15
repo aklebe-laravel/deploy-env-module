@@ -2,8 +2,8 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvClearCaches extends DeployEnvBase
 {
@@ -26,10 +26,10 @@ class DeployEnvClearCaches extends DeployEnvBase
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $result = $this->runProcessArtisanCacheClear();
-        return $result->successful() ? Command::SUCCESS : Command::FAILURE;
+        return $result->successful() ? CommandResult::SUCCESS : CommandResult::FAILURE;
     }
 
 }

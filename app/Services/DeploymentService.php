@@ -2,7 +2,6 @@
 
 namespace Modules\DeployEnv\app\Services;
 
-
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
@@ -16,13 +15,14 @@ use Modules\SystemBase\app\Services\DatabaseService;
 use Modules\SystemBase\app\Services\ModuleService;
 use Nwidart\Modules\Facades\Module as ModuleFacade;
 use Nwidart\Modules\Module;
+use Symfony\Component\Console\Command\Command;
 
 class DeploymentService extends BaseService
 {
     /**
      *
      */
-    const MODULE_CONFIG_IDENT = 'module-deploy-env';
+    const string MODULE_CONFIG_IDENT = 'module-deploy-env';
 
     /**
      * @var int
@@ -68,7 +68,8 @@ class DeploymentService extends BaseService
     /**
      * @param  string  $moduleName  module snake or studly name, '*' for all modules
      * @param  string  $moduleVersion
-     * @param  bool  $force
+     * @param  bool    $force
+     *
      * @return bool
      */
     public function runTerraformModules(string $moduleName = '*', string $moduleVersion = '', bool $force = false): bool
@@ -85,7 +86,10 @@ class DeploymentService extends BaseService
         /** @var ModuleService $moduleService */
         $moduleService = app(ModuleService::class);
         if ($result = $moduleService->runOrderedEnabledModules(function (?Module $module) use (
-            $moduleSnakeName, $moduleService, $moduleVersion, $force
+            $moduleSnakeName,
+            $moduleService,
+            $moduleVersion,
+            $force
         ) {
             $this->currentModule = $module;
             $currentModuleSnakeName = $moduleService->getSnakeName($module);
@@ -95,9 +99,12 @@ class DeploymentService extends BaseService
                 return true;
             }
 
+            $this->info("Run terraform module \"$currentModuleSnakeName\"");
             $configName = $currentModuleSnakeName.'.'.self::MODULE_CONFIG_IDENT;
+
             return $this->runTerraformModule($configName, $currentModuleSnakeName, $moduleVersion, $force);
-        })) {
+        })
+        ) {
 
             // After all modules successfully done: run once for the app itself
             // @todo: place it in main loop with runOrderedEnabledModules(..., inclusiveApp: true)
@@ -112,14 +119,14 @@ class DeploymentService extends BaseService
     }
 
     /**
-     * @param  string  $configName
+     * @param  string       $configName
      * @param  string|null  $moduleName
-     * @param  string  $version
-     * @param  bool  $force
+     * @param  string       $version
+     * @param  bool         $force
+     *
      * @return bool
      */
-    public function runTerraformModule(string $configName, ?string $moduleName = null, string $version = '',
-        bool $force = false): bool
+    public function runTerraformModule(string $configName, ?string $moduleName = null, string $version = '', bool $force = false): bool
     {
         $configDeployments = config($configName.'.deployments', []);
         if (!count($configDeployments)) {
@@ -142,9 +149,10 @@ class DeploymentService extends BaseService
             if (!$force) {
                 // check deployment is already done ...
                 if (ModuleDeployenvDeployment::with([])
-                    ->where('module', $moduleName)
-                    ->where('version', $deployIdent)
-                    ->first()) {
+                                             ->where('module', $moduleName)
+                                             ->where('version', $deployIdent)
+                                             ->first()
+                ) {
                     // $this->debug(sprintf("OK. Deployment already done %s-%s", $moduleName ?? 'APP', $deployIdent));
                     continue;
                 }
@@ -178,6 +186,7 @@ class DeploymentService extends BaseService
                 if (!$cmd) {
                     $this->error(sprintf("Missing cmd in config: %s", $configName), [__METHOD__]);
                     $this->decrementIndent(2);
+
                     return false;
                 }
 
@@ -191,6 +200,7 @@ class DeploymentService extends BaseService
                     if (!$this->runConfigCmd($cmd, $identContainerItem)) {
                         $this->error("Run Config Command returns false. Skipping process.", [__METHOD__]);
                         $this->decrementIndent(2);
+
                         return false;
                     }
                 } else {
@@ -213,6 +223,7 @@ class DeploymentService extends BaseService
      * Currently supported: implicit AND.
      *
      * @param $conditions
+     *
      * @return bool
      */
     public function checkAllConditions($conditions): bool
@@ -231,6 +242,7 @@ class DeploymentService extends BaseService
     /**
      * @param $conditionCode
      * @param $conditionValue
+     *
      * @return bool
      */
     public function checkCondition($conditionCode, $conditionValue): bool
@@ -277,17 +289,18 @@ class DeploymentService extends BaseService
                 break;
 
         }
+
         return $result;
     }
 
     /**
      * @param  string|null  $moduleName
      * @param  string|null  $deployIdent
-     * @param  int|null  $batchOrCurrent  leave null to set automatically by current process
+     * @param  int|null     $batchOrCurrent  leave null to set automatically by current process
+     *
      * @return bool
      */
-    public function createDeployenvDeployment(?string $moduleName, ?string $deployIdent,
-        ?int $batchOrCurrent = null): bool
+    public function createDeployenvDeployment(?string $moduleName, ?string $deployIdent, ?int $batchOrCurrent = null): bool
     {
         if (!ModuleDeployenvDeployment::where('module', $moduleName)->where('version', $deployIdent)->first()) {
             $this->debug(sprintf("Creating deployment entry: %s-%s", $moduleName ?? 'APP', $deployIdent), [__METHOD__]);
@@ -305,7 +318,8 @@ class DeploymentService extends BaseService
      * The main process for commands which will run the specific subroutine.
      *
      * @param  string  $cmd
-     * @param  array  $data
+     * @param  array   $data
+     *
      * @return bool false when failed
      */
     public function runConfigCmd(string $cmd, array $data): bool
@@ -313,14 +327,17 @@ class DeploymentService extends BaseService
         $methodName = 'runConfigCmd'.Str::studly($cmd);
         if (!method_exists($this, $methodName)) {
             $this->error(sprintf("Missing method: %s", $methodName));
+
             return false;
         }
+
         return $this->$methodName($cmd, $data);
     }
 
     /**
-     * @param  string  $cmd  like 'models', 'artisan' or 'raw_sql'
+     * @param  string  $cmd     like 'models', 'artisan' or 'raw_sql'
      * @param  string  $script  script filename like 'my_model.php' or 'more/script_07.sql'
+     *
      * @return string
      */
     protected function getDeployScriptPath(string $cmd, string $script): string
@@ -339,7 +356,8 @@ class DeploymentService extends BaseService
 
     /**
      * @param  string  $cmd
-     * @param  array  $data
+     * @param  array   $data
+     *
      * @return bool
      */
     public function runConfigCmdArtisan(string $cmd, array $data): bool
@@ -349,19 +367,22 @@ class DeploymentService extends BaseService
         $artisanCommands = data_get($data, 'sources', []);
         foreach ($artisanCommands as $artisanCommand) {
             // $this->debug(sprintf("Artisan: %s", $artisanCommand));
-            if (Artisan::call($artisanCommand) !== \Illuminate\Console\Command::SUCCESS) {
+            if (Artisan::call($artisanCommand) !== Command::SUCCESS) {
                 $this->error("Artisan failed!");
                 $this->decrementIndent();
+
                 return false;
             }
         }
         $this->decrementIndent();
+
         return true;
     }
 
     /**
      * @param  string  $cmd
-     * @param  array  $data
+     * @param  array   $data
+     *
      * @return bool
      */
     public function runConfigCmdProcess(string $cmd, array $data): bool
@@ -379,16 +400,19 @@ class DeploymentService extends BaseService
             if ($result->failed()) {
                 $this->error("Process failed!");
                 $this->decrementIndent();
+
                 return false;
             }
         }
         $this->decrementIndent();
+
         return true;
     }
 
     /**
      * @param  string  $cmd
-     * @param  array  $data
+     * @param  array   $data
+     *
      * @return bool
      */
     public function runConfigCmdFunctions(string $cmd, array $data): bool
@@ -396,22 +420,29 @@ class DeploymentService extends BaseService
         // $this->debug('Run Function Commands: ');
         $this->incrementIndent();
         $functionCommands = data_get($data, 'sources', []);
+        /**
+         * @var string   $functionKey
+         * @var callable $functionCommand
+         */
         foreach ($functionCommands as $functionKey => $functionCommand) {
             // $this->debug(sprintf("Function: %s", $functionKey));
             if (!app('system_base')->isCallableClosure($functionCommand)) {
                 $this->error("Function expected!");
                 $this->decrementIndent();
+
                 return false;
             }
         }
         $functionCommand($cmd, $functionKey);
         $this->decrementIndent();
+
         return true;
     }
 
     /**
      * @param  string  $cmd
-     * @param  array  $data
+     * @param  array   $data
+     *
      * @return bool
      */
     public function runConfigCmdRawSql(string $cmd, array $data): bool
@@ -424,6 +455,7 @@ class DeploymentService extends BaseService
             if (($scriptContent = app('system_base_file')->loadFile($script)) === false) {
                 $this->error(sprintf("Failed to load script: %s", $script));
                 $this->decrementIndent();
+
                 return false;
             }
 
@@ -439,16 +471,19 @@ class DeploymentService extends BaseService
                 $this->error($ex->getMessage());
                 $this->error($ex->getTraceAsString());
                 $this->decrementIndent();
+
                 return false;
             }
         }
         $this->decrementIndent();
+
         return true;
     }
 
     /**
      * @param  string  $cmd
-     * @param  array  $data
+     * @param  array   $data
+     *
      * @return bool
      */
     public function runConfigCmdModels(string $cmd, array $data): bool
@@ -463,24 +498,30 @@ class DeploymentService extends BaseService
             if (!file_exists($script)) {
                 $this->error('Missing model script {script}', ['script' => $script]);
                 $this->decrementIndent();
+
                 return false;
             }
 
             $scriptResult = include($script);
             if (!($modelName = data_get($scriptResult, 'model', ''))) {
-                $this->error('Missing parameter model!');
+                $this->error('Missing parameter model!', ['script' => $script]);
                 $this->decrementIndent();
+
                 return false;
             }
 
             if (!(class_exists($modelName))) {
-                $this->error(sprintf("Missing class %s", $modelName));
+                $this->error(sprintf("Missing class %s", $modelName), ['script' => $script]);
                 $this->decrementIndent();
+
                 return false;
             }
 
             $uniqueColumns = data_get($scriptResult, 'uniques', []);
             $modelList = data_get($scriptResult, 'data', []);
+            if (app('system_base')->isCallableClosure($modelList)) {
+                $modelList = $modelList();
+            }
             $relationsDefinitions = data_get($scriptResult, 'relations', []);
             $processedCount = 0;
             $updateCount = 0;
@@ -529,6 +570,7 @@ class DeploymentService extends BaseService
             //     $createdCount, $updateCount));
         }
         $this->decrementIndent();
+
         return true;
     }
 
@@ -536,6 +578,7 @@ class DeploymentService extends BaseService
      * @param  Model  $model
      * @param  array  $modelData
      * @param  array  $relationsDefinitions
+     *
      * @return bool
      */
     protected function createOrUpdateRelations(Model $model, array $modelData, array $relationsDefinitions): bool
@@ -568,6 +611,7 @@ class DeploymentService extends BaseService
                     if (is_array($relationColumn)) {
                         if (!is_array($modelRelationItem)) {
                             $this->error("If relation colum is an array, model relation item also have to be an array.");
+
                             return false;
                         }
                         $newRelatedBuilder = $relatedClass::with([]);
@@ -609,6 +653,7 @@ class DeploymentService extends BaseService
                         // use upsert() here
 
                         $this->error("NOT IMPLEMENTED: saveMany()", [__METHOD__]);
+
                         return false;
 
                     } elseif (method_exists($modelRelationMethodInstance, 'associate')) {
@@ -624,6 +669,7 @@ class DeploymentService extends BaseService
                     } else {
 
                         $this->error("NOT IMPLEMENTED: no update routine!", [__METHOD__]);
+
                         return false;
 
                     }
@@ -640,6 +686,7 @@ class DeploymentService extends BaseService
      * Get cleaned model data without specials like '#sync_relation.res' etc ...
      *
      * @param  array  $modelData
+     *
      * @return array
      */
     protected function cleanedModelData(array $modelData): array
@@ -661,6 +708,7 @@ class DeploymentService extends BaseService
      *
      * @param  array  $modelData
      * @param  array  $uniqueColumns
+     *
      * @return array
      */
     protected function getPreparedUniqueData(array $modelData, array $uniqueColumns): array
@@ -671,13 +719,15 @@ class DeploymentService extends BaseService
                 $result[$unique] = $modelData[$unique];
             }
         }
+
         return $result;
     }
 
     /**
      * @param  string  $modelName
-     * @param  array  $modelData
-     * @param  array  $preparedUniqueData
+     * @param  array   $modelData
+     * @param  array   $preparedUniqueData
+     *
      * @return Model|null
      */
     protected function loadModelByData(string $modelName, array $modelData, array $preparedUniqueData): ?Model
@@ -699,6 +749,7 @@ class DeploymentService extends BaseService
                 }
             }
         }
+
         return $builder->first();
     }
 

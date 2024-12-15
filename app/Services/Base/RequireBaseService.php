@@ -249,7 +249,7 @@ class RequireBaseService extends BaseService
 
         // parse git url ...
         $gitSourceCurrent = $parser->parse($configGitSource);
-        $this->debug(sprintf("Checking current git source: %s", $gitSourceCurrent));
+        $this->debug(sprintf("Checking current git source: \"%s\"", $gitSourceCurrent));
 
         // @todo: check git source exists would be nice at this point ...
         //            // testRemote() not working
@@ -271,7 +271,7 @@ class RequireBaseService extends BaseService
 
         // dev_mode && not clean
         if ($gitService->hasChanges()) {
-            $this->debug(sprintf("Repository has changes, but dev_mode enabled. Skipping. (dev_mode: %s)", $devMode));
+            $this->debug(sprintf("Repository for \"{$this->currentStudlyName}\" has changes, but \"dev_mode\" is enabled. Skipping. (dev_mode: %s)", $devMode));
             $this->decrementIndent();
             return true;
         }
