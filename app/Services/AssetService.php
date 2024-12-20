@@ -17,7 +17,7 @@ class AssetService extends BaseService
     /**
      * Path to generated asset files
      */
-    const STORAGE_PATH_MERCY_GENERATED = 'app/mercy-generated';
+    const string STORAGE_PATH_MERCY_GENERATED = 'app/mercy-generated';
 
     /**
      * Asset Config
@@ -29,19 +29,19 @@ class AssetService extends BaseService
             'assets' => [
                 'css'  => [
                     'files'  => [
-                        'assets/css/.*\.css$'
+                        'assets/css/.*\.css$',
                     ],
                     'method' => 'include', // include,merge
                 ],
                 'scss' => [
                     'files'  => [
-                        'assets/sass/.*\.scss$'
+                        'assets/sass/.*\.scss$',
                     ],
                     'method' => 'include', // include,merge
                 ],
                 'js'   => [
                     'files'  => [
-                        'assets/js/app\.js$'
+                        'assets/js/app\.js$',
                     ],
                     'method' => 'include', // include,merge
                 ],
@@ -52,14 +52,14 @@ class AssetService extends BaseService
             'assets'  => [
                 'css'  => [
                     'files'  => [
-                        'assets/css/.*\.css$'
+                        'assets/css/.*\.css$',
                     ],
                     'method' => 'include', // include,merge
                 ],
                 'scss' => [
                     'files'  => [
                         //                        'assets/sass/.*\.scss$'
-                        'assets/sass/app\.scss$'
+                        'assets/sass/app\.scss$',
                     ],
                     'method' => 'include', // include,merge
                 ],
@@ -67,7 +67,7 @@ class AssetService extends BaseService
                     // last_only: default false, set tru if you only need the inherited one instead of use all founds
                     'last_only' => true,
                     'files'     => [
-                        'assets/js/app\.js$'
+                        'assets/js/app\.js$',
                     ],
                     'method'    => 'include',
                     // include,merge
@@ -94,7 +94,8 @@ class AssetService extends BaseService
 
     /**
      * @param  string  $addonType  'module' or 'theme'
-     * @param  array  $fileListContainer
+     * @param  array   $fileListContainer
+     *
      * @return void
      */
     public function implementFiles(string $addonType, array $fileListContainer): void
@@ -194,7 +195,9 @@ class AssetService extends BaseService
         /** @var ModuleService $moduleService */
         $moduleService = app(ModuleService::class);
         $moduleService->runOrderedEnabledModules(function (?NwidartModule $module) use (
-            $moduleService, &$required, $addonType
+            $moduleService,
+            &$required,
+            $addonType
         ) {
             $assetPath = $moduleService->getPath('resources/assets', $module->getName());
 
@@ -240,8 +243,9 @@ class AssetService extends BaseService
 
     /**
      * @param  string  $assetPath
-     * @param  array  $required
+     * @param  array   $required
      * @param  string  $addonType
+     *
      * @return void
      */
     public function getRequiredList(string $assetPath, array &$required, string $addonType): void

@@ -2,8 +2,8 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvFixGitIgnore extends DeployEnvBase
 {
@@ -26,20 +26,21 @@ class DeployEnvFixGitIgnore extends DeployEnvBase
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $r = $this->runProcess('git rm -r --cached .');
         if (!$r->successful()) {
-            return Command::FAILURE;
+            return CommandResult::FAILURE;
         }
 
         $r = $this->runProcess('git add .');
         if (!$r->successful()) {
-            return Command::FAILURE;
+            return CommandResult::FAILURE;
         }
 
         $r = $this->runProcess('git checkout -m "gitignore fixed by deploy-env process"');
-        return $r->successful() ? Command::SUCCESS : Command::FAILURE;
+
+        return $r->successful() ? CommandResult::SUCCESS : CommandResult::FAILURE;
     }
 
 }

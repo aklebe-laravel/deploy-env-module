@@ -5,6 +5,7 @@ namespace Modules\DeployEnv\app\Console;
 use Exception;
 use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Services\BashScriptsService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvUpdateBashScriptEnv extends Command
 {
@@ -28,10 +29,11 @@ class DeployEnvUpdateBashScriptEnv extends Command
      * @return int
      * @throws Exception
      */
-    public function handle()
+    public function handle(): int
     {
         $bashScriptsService = app(BashScriptsService::class);
-        return $bashScriptsService->updateBashScripts() ? Command::SUCCESS : Command::FAILURE;
+
+        return $bashScriptsService->updateBashScripts() ? CommandResult::SUCCESS : CommandResult::FAILURE;
     }
 
 }

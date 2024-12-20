@@ -2,9 +2,9 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\DeployEnv\app\Services\AssetService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvBuildMercyAssets extends DeployEnvBase
 {
@@ -27,12 +27,13 @@ class DeployEnvBuildMercyAssets extends DeployEnvBase
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         /** @var AssetService $assetService */
         $assetService = app(AssetService::class);
         $assetService->buildMercyAssets();
-        return Command::SUCCESS;
+
+        return CommandResult::SUCCESS;
     }
 
 }

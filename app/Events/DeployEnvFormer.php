@@ -21,14 +21,4 @@ class DeployEnvFormer
         $this->moduleName = $moduleName;
         $this->classes = $classes;
     }
-
-    // /**
-    //  * Get the channels the event should be broadcast on.
-    //  */
-    // public function broadcastOn(): array
-    // {
-    //     return [
-    //         new PrivateChannel('channel-name'),
-    //     ];
-    // }
 }

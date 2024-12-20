@@ -2,10 +2,10 @@
 
 namespace Modules\DeployEnv\app\Console;
 
-use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\SystemBase\app\Services\DatabaseService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvDbImport extends DeployEnvBase
 {
@@ -28,14 +28,15 @@ class DeployEnvDbImport extends DeployEnvBase
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $dbService = app(DatabaseService::class);
         $sqlFilename = $this->argument('sql_file');
 
         if (($scriptContent = app('system_base_file')->loadFile($sqlFilename)) === false) {
             $this->getOutput()->error(sprintf("Unable to read file: %s", $sqlFilename));
-            return Command::FAILURE;
+
+            return CommandResult::FAILURE;
         }
 
         $dbName = $this->option('db_name') ?: '';
@@ -49,7 +50,8 @@ class DeployEnvDbImport extends DeployEnvBase
             // Check db name is valid
             if (!preg_match('#^[a-zA-Z0-9_]+$#', $dbName)) {
                 $this->getOutput()->error(sprintf("Invalid DB Name: %s", $dbName));
-                return Command::FAILURE;
+
+                return CommandResult::FAILURE;
             }
 
             // Create db if not exists
@@ -68,10 +70,12 @@ class DeployEnvDbImport extends DeployEnvBase
         // Finally execute the script
         if (DB::unprepared($scriptContent)) {
             $dbService->resetDatabase();
-            return Command::SUCCESS;
+
+            return CommandResult::SUCCESS;
         } else {
             $dbService->resetDatabase();
-            return Command::FAILURE;
+
+            return CommandResult::FAILURE;
         }
     }
 

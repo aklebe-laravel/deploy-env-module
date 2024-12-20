@@ -3,9 +3,9 @@
 namespace Modules\DeployEnv\app\Console;
 
 use CzProject\GitPhp\GitException;
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\DeployEnv\app\Services\RequireThemeService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvRequireTheme extends DeployEnvBase
 {
@@ -29,7 +29,7 @@ class DeployEnvRequireTheme extends DeployEnvBase
      * @return int
      * @throws GitException
      */
-    public function handle()
+    public function handle(): int
     {
         $automaticProcesses = !$this->option('no-auto');
 
@@ -66,11 +66,12 @@ class DeployEnvRequireTheme extends DeployEnvBase
 
             } else {
                 $this->error("Theme requirement failed!");
-                return Command::FAILURE;
+
+                return CommandResult::FAILURE;
             }
         }
 
-        return Command::SUCCESS;
+        return CommandResult::SUCCESS;
     }
 
 }
