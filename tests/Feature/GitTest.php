@@ -11,7 +11,7 @@ class GitTest extends TestCase
     /**
      * Repository folder which will be deleted after all tests
      */
-    const gitTestPath = 'tests/git_pulls';
+    const string gitTestPath = 'tests/git_pulls';
 
     /**
      * True to add a unique sign to folders
@@ -62,11 +62,11 @@ class GitTest extends TestCase
 
         $gitSources = [
             // 'aklebe-laravel/test-github-actions' => '^0.1',
-            'aklebe-laravel/system-base-module'  => '^1.0',
+            'aklebe-laravel/system-base-module' => '^1.0',
             // 'aklebe-laravel/acl-module'          => 'dev-master',
-            'aklebe-laravel/acl-module'          => '^1.0',
+            'aklebe-laravel/acl-module'         => '^1.0',
             // 'aklebe-laravel/deploy-env-module'   => '^1.0',
-            'aklebe-laravel/form-module'         => '^1.0',
+            'aklebe-laravel/form-module'        => '^1.0',
             // 'aklebe-laravel/data-table-module'   => '^1.0',
             // 'aklebe-laravel/telegram-api-module' => '^1.0',
             // 'aklebe-laravel/website-base-module' => '^1.0',

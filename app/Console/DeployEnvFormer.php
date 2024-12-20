@@ -3,10 +3,11 @@
 namespace Modules\DeployEnv\app\Console;
 
 use Exception;
-use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
+use Modules\DeployEnv\app\Events\DeployEnvFormer as DeployEnvFormerEvent;
 use Modules\SystemBase\app\Services\ModuleService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvFormer extends DeployEnvBase
 {
@@ -30,18 +31,20 @@ class DeployEnvFormer extends DeployEnvBase
      * @return int
      * @throws Exception
      */
-    public function handle()
+    public function handle(): int
     {
         if (!($moduleName = $this->argument('module_name'))) {
             $this->error("Missing module_name!");
-            return Command::FAILURE;
+
+            return CommandResult::FAILURE;
         }
 
         $moduleService = app('system_base_module');
         $moduleInfo = $moduleService->getItemInfo($moduleName);
         if (!data_get($moduleInfo, 'is_installed', false)) {
             $this->error(sprintf("Unknown module %s!", $moduleName));
-            return Command::FAILURE;
+
+            return CommandResult::FAILURE;
         }
 
         // $this->info(print_r($moduleInfo, true));
@@ -61,13 +64,14 @@ class DeployEnvFormer extends DeployEnvBase
         // $this->info(print_r($classes, true));
 
         // Call listeners for events
-        \Modules\DeployEnv\app\Events\DeployEnvFormer::dispatch($moduleName, $classes);
+        DeployEnvFormerEvent::dispatch($moduleName, $classes);
 
-        return Command::SUCCESS;
+        return CommandResult::SUCCESS;
     }
 
     /**
      * @param  string  $moduleName
+     *
      * @return array
      */
     private function findModels(string $moduleName): array

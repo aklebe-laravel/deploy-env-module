@@ -3,9 +3,9 @@
 namespace Modules\DeployEnv\app\Console;
 
 use CzProject\GitPhp\GitException;
-use Illuminate\Console\Command;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\DeployEnv\app\Services\RequireModuleService;
+use Symfony\Component\Console\Command\Command as CommandResult;
 
 class DeployEnvRequireModule extends DeployEnvBase
 {
@@ -29,7 +29,7 @@ class DeployEnvRequireModule extends DeployEnvBase
      * @return int
      * @throws GitException
      */
-    public function handle()
+    public function handle(): int
     {
         $automaticProcesses = !$this->option('no-auto');
 
@@ -68,7 +68,8 @@ class DeployEnvRequireModule extends DeployEnvBase
 
             } else {
                 $this->error("Module requirement failed!");
-                return Command::FAILURE;
+
+                return CommandResult::FAILURE;
             }
         }
 
@@ -77,12 +78,12 @@ class DeployEnvRequireModule extends DeployEnvBase
             if ($this->composerDumpAutoLoadNeededForNewModules) {
                 $r = $this->runProcessComposerDump();
                 if ($r->failed()) {
-                    return Command::FAILURE;
+                    return CommandResult::FAILURE;
                 }
             }
         }
 
-        return Command::SUCCESS;
+        return CommandResult::SUCCESS;
     }
 
 }
