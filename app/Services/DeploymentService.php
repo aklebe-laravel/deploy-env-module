@@ -362,7 +362,6 @@ class DeploymentService extends BaseService
      */
     public function runConfigCmdArtisan(string $cmd, array $data): bool
     {
-        // $this->debug('Run Artisan Commands: ');
         $this->incrementIndent();
         $artisanCommands = data_get($data, 'sources', []);
         foreach ($artisanCommands as $artisanCommand) {
@@ -387,7 +386,6 @@ class DeploymentService extends BaseService
      */
     public function runConfigCmdProcess(string $cmd, array $data): bool
     {
-        // $this->debug('Run Processes: ');
         $this->incrementIndent();
         $processSources = data_get($data, 'sources', []);
         foreach ($processSources as $processSource) {
@@ -417,7 +415,6 @@ class DeploymentService extends BaseService
      */
     public function runConfigCmdFunctions(string $cmd, array $data): bool
     {
-        // $this->debug('Run Function Commands: ');
         $this->incrementIndent();
         $functionCommands = data_get($data, 'sources', []);
         /**
@@ -447,7 +444,6 @@ class DeploymentService extends BaseService
      */
     public function runConfigCmdRawSql(string $cmd, array $data): bool
     {
-        // $this->debug('Run Raw Scripts: ');
         $scripts = data_get($data, 'sources', []);
         $this->incrementIndent();
         foreach ($scripts as $script) {
@@ -488,8 +484,6 @@ class DeploymentService extends BaseService
      */
     public function runConfigCmdModels(string $cmd, array $data): bool
     {
-        // $this->debug('Run Models: ');
-
         $scripts = data_get($data, 'sources', []);
         $this->incrementIndent();
         foreach ($scripts as $script) {
@@ -536,6 +530,15 @@ class DeploymentService extends BaseService
                 if ($modelFound = $this->loadModelByData($modelName, $modelData, $preparedUniqueData)) {
                     if (data_get($scriptResult, 'update', false)) {
                         // $this->debug("Model data found. Updating ...", $preparedUniqueData);
+
+                        // if update but 'ignore_update_fields' ...
+                        if ($ignoreFields = data_get($scriptResult, 'ignore_update_fields', [])) {
+                            foreach ($ignoreFields as $ignoreField) {
+                                if (isset($cleanedModelData[$ignoreField])) {
+                                    unset($cleanedModelData[$ignoreField]);
+                                }
+                            }
+                        }
 
                         // updating model ...
                         $modelFound->update($cleanedModelData, $preparedUniqueData);
