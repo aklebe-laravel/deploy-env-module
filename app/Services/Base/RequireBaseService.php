@@ -148,13 +148,14 @@ class RequireBaseService extends BaseService
     }
 
     /**
-     * @param  Collection  $listOFDataObjects
+     * @param  Collection  $listOfDataObjects
+     *
      * @return bool
      * @throws GitException
      */
-    public function requireItemByListOfData(Collection $listOFDataObjects): bool
+    public function requireItemByListOfData(Collection $listOfDataObjects): bool
     {
-        foreach ($listOFDataObjects as $item) {
+        foreach ($listOfDataObjects as $item) {
             if (!$this->requireItemByData($item)) {
                 return false;
             }
