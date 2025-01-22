@@ -47,5 +47,7 @@ composer_executable="composer"
 # Miscellaneous
 # =============================================
 mercyModuleDirectory="${{config name="modules.namespace"}}"
+mercyThemeDirectory="${{config name="theme.namespace"}}"
+defaultBranch="${{config name="mercy-dependencies.default_branch"}}"
 dark_theme=1 # 0 or 1
 delete_dump=1
