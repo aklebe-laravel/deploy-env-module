@@ -42,5 +42,7 @@ composer_executable="composer"
 # Miscellaneous
 # =============================================
 mercyModuleDirectory="Modules"
+mercyThemeDirectory="Themes"
+defaultBranch="master"
 dark_theme=1 # 0 or 1
 delete_dump=1
