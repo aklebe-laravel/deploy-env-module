@@ -122,6 +122,8 @@ class ImportContent
             return false;
         }
 
+        $event->results->setData('import_rows_requested', $csv->currentRowNumber - 1);
+        $event->results->setData('import_rows_success', $importCount);
         Log::info(sprintf("Import processed %s/%s rows of '%s' from file '%s'", $importCount, $csv->currentRowNumber - 1, $event->type, $event->sourcePathInfo['basename']));
 
         return true;
