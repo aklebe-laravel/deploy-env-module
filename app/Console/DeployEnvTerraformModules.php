@@ -2,6 +2,7 @@
 
 namespace Modules\DeployEnv\app\Console;
 
+use Illuminate\Support\Facades\Cache;
 use Modules\DeployEnv\app\Console\Base\DeployEnvBase;
 use Modules\DeployEnv\app\Services\DeploymentService;
 use Symfony\Component\Console\Command\Command as CommandResult;
@@ -29,6 +30,8 @@ class DeployEnvTerraformModules extends DeployEnvBase
      */
     public function handle(): int
     {
+        Cache::flush();
+
         $moduleName = $this->option('module_name') ?: '*';
         $moduleVersion = $this->option('module_version') ?: '';
         $force = (bool)$this->option('force');

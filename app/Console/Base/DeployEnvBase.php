@@ -138,12 +138,6 @@ class DeployEnvBase extends Command
             $this->warn("Don't forget to run 'php artisan migrate' manually!");
         }
 
-        // cache clear 1a)
-        Cache::flush();
-        $cmd = $this->getFinalArtisanProcessCmd('cache:clear');
-        $this->runProcess($cmd);
-        //$this->runProcessArtisanCacheClear();
-
         // next step: deploy env update
         if ($this->confirm("Starting modules deployment env update?", true)) {
             $currentUpdateResult = $this->runProcessDeployEnvUpdate();
@@ -153,12 +147,6 @@ class DeployEnvBase extends Command
         } else {
             $this->warn("Don't forget to run 'php artisan deploy-env:terraform-modules' manually!");
         }
-
-        // cache clear 1b)
-        Cache::flush();
-        $cmd = $this->getFinalArtisanProcessCmd('cache:clear');
-        $this->runProcess($cmd);
-        //$this->runProcessArtisanCacheClear();
 
         // Npm build ...
         if ($this->confirm("Starting rebuild frontend?", true)) {

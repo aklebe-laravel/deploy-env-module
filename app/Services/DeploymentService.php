@@ -5,12 +5,14 @@ namespace Modules\DeployEnv\app\Services;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Modules\DeployEnv\app\Models\ModuleDeployenvDeployment;
 use Modules\SystemBase\app\Services\Base\BaseService;
+use Modules\SystemBase\app\Services\CacheService;
 use Modules\SystemBase\app\Services\DatabaseService;
 use Modules\SystemBase\app\Services\ModuleService;
 use Nwidart\Modules\Facades\Module as ModuleFacade;
@@ -128,6 +130,8 @@ class DeploymentService extends BaseService
      */
     public function runTerraformModule(string $configName, ?string $moduleName = null, string $version = '', bool $force = false): bool
     {
+        Cache::flush();
+
         $configDeployments = config($configName.'.deployments', []);
         if (!count($configDeployments)) {
             return true;
@@ -162,6 +166,8 @@ class DeploymentService extends BaseService
 
             $this->incrementIndent();
             foreach ($identContainer as $identContainerItem) {
+
+                Cache::flush();
 
                 $cmd = data_get($identContainerItem, 'cmd');
                 // if ($fileFilter) {
