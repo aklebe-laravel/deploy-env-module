@@ -376,16 +376,18 @@ class DeployEnvBase extends Command
         $cmd = $this->getFinalArtisanProcessCmd('cache:clear');
         $result1 = $this->runProcess($cmd);
 
-        //// This should clear "bootstrap/cache", but it didn't
-        //$cmd = $this->getFinalArtisanProcessCmd('optimize:clear');
-        //$this->runProcess($cmd);
+        // This should clear "bootstrap/cache", but modules.php
+        $this->runProcessArtisanClearCompiled();
 
-        // remove php files in "bootstrap/cache" folder because "cache:clear" will not remove everything
-        app('system_base_file')->runDirectoryFiles(base_path("bootstrap/cache"), function (string $file, array $sourcePathInfo) {
-            if ($sourcePathInfo['extension'] === 'php') {
-                unlink($file);
-            }
-        });
+        // another version of runProcessArtisanClearCompiled() ...
+        //// remove php files in "bootstrap/cache" folder because "cache:clear" will not remove everything
+        //if ($clearBootsTrapCache) {
+        //    app('system_base_file')->runDirectoryFiles(base_path("bootstrap/cache"), function (string $file, array $sourcePathInfo) {
+        //        if ($sourcePathInfo['extension'] === 'php') {
+        //            unlink($file);
+        //        }
+        //    });
+        //}
 
         $cmd = $this->getFinalArtisanProcessCmd('route:clear');
         $this->runProcess($cmd);
