@@ -79,7 +79,9 @@ class DeploymentService extends BaseService
         // force snake notation
         $moduleSnakeName = Str::snake($moduleName, '-');
         $this->info(sprintf("DeployEnv: Starting modules config deployments for %s, version: %s, force: %b",
-            $moduleSnakeName, $moduleVersion, $force));
+            $moduleSnakeName,
+            $moduleVersion,
+            $force));
 
         // Create next batch counter
         $this->createNextBatch();
@@ -130,10 +132,10 @@ class DeploymentService extends BaseService
      */
     public function runTerraformModule(string $configName, ?string $moduleName = null, string $version = '', bool $force = false): bool
     {
-        Cache::flush();
-
         $configDeployments = config($configName.'.deployments', []);
+
         if (!count($configDeployments)) {
+
             return true;
         }
 
@@ -152,12 +154,8 @@ class DeploymentService extends BaseService
 
             if (!$force) {
                 // check deployment is already done ...
-                if (ModuleDeployenvDeployment::with([])
-                                             ->where('module', $moduleName)
-                                             ->where('version', $deployIdent)
-                                             ->first()
-                ) {
-                    // $this->debug(sprintf("OK. Deployment already done %s-%s", $moduleName ?? 'APP', $deployIdent));
+                if (ModuleDeployenvDeployment::with([])->where('module', $moduleName)->where('version', $deployIdent)->first()) {
+                    $this->debug(sprintf("OK. Deployment already done %s-%s", $moduleName ?? 'APP', $deployIdent));
                     continue;
                 }
             }
@@ -166,8 +164,6 @@ class DeploymentService extends BaseService
 
             $this->incrementIndent();
             foreach ($identContainer as $identContainerItem) {
-
-                Cache::flush();
 
                 $cmd = data_get($identContainerItem, 'cmd');
                 // if ($fileFilter) {

@@ -120,13 +120,8 @@ class DeployEnvBase extends Command
             $this->warn("Don't forget update npm manually!");
         }
 
-        //        // Clear Caches will start below ...
-        //        if ($this->confirm("Clear caches?", true)) {
-        //            $currentUpdateResult = $this->runProcessArtisanCacheClear();
-        //            if ($currentUpdateResult->failed()) {
-        //                return CommandResult::FAILURE;
-        //            }
-        //        }
+        //
+        $this->runProcessArtisanCacheClear();
 
         // next step: migrate
         if ($this->confirm("Starting artisan migrate?", true)) {
@@ -269,6 +264,16 @@ class DeployEnvBase extends Command
     /**
      * @return ProcessResult|ContractsProcessResult
      */
+    public function runProcessArtisanModuleClearCompiled(): ProcessResult|ContractsProcessResult
+    {
+        $cmd = $this->getFinalArtisanProcessCmd('module:clear-compiled');
+
+        return $this->runProcess($cmd);
+    }
+
+    /**
+     * @return ProcessResult|ContractsProcessResult
+     */
     public function runProcessArtisanOptimize(): ProcessResult|ContractsProcessResult
     {
         $cmd = $this->getFinalArtisanProcessCmd('optimize');
@@ -378,6 +383,8 @@ class DeployEnvBase extends Command
 
         // This should clear "bootstrap/cache", but modules.php
         $this->runProcessArtisanClearCompiled();
+        // clear modules cache
+        $this->runProcessArtisanModuleClearCompiled();
 
         // another version of runProcessArtisanClearCompiled() ...
         //// remove php files in "bootstrap/cache" folder because "cache:clear" will not remove everything

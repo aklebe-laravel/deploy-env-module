@@ -30,8 +30,6 @@ class DeployEnvTerraformModules extends DeployEnvBase
      */
     public function handle(): int
     {
-        Cache::flush();
-
         $moduleName = $this->option('module_name') ?: '*';
         $moduleVersion = $this->option('module_version') ?: '';
         $force = (bool)$this->option('force');
