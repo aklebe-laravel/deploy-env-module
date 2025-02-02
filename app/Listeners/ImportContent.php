@@ -5,6 +5,7 @@ namespace Modules\DeployEnv\app\Listeners;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Modules\Acl\app\Models\AclResource;
 use Modules\DeployEnv\app\Events\ImportContent as ImportContentEvent;
 use Modules\DeployEnv\app\Events\ImportRow;
 use Modules\SystemBase\app\Services\Csv;
@@ -22,10 +23,10 @@ class ImportContent
      */
     protected array $columnAclResources = [
         'user'  => [
-            'admin',
+            AclResource::RES_ADMIN,
         ],
         'store' => [
-            'admin',
+            AclResource::RES_ADMIN,
         ],
     ];
 
