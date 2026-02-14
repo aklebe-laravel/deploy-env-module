@@ -131,7 +131,7 @@ class AssetService extends BaseService
                             storage_path(self::STORAGE_PATH_MERCY_GENERATED));
                         switch ($extension) {
                             case 'js':
-                                file_put_contents($destinationPath, "/***** INCLUDE: '$file' *****/\n", FILE_APPEND);
+                                file_put_contents($destinationPath, "/***** INCLUDE JS: '$file' *****/\n", FILE_APPEND);
 
                                 if ($method === 'include') {
                                     file_put_contents($destinationPath, "import '$relativeFile';\n", FILE_APPEND);
@@ -143,19 +143,20 @@ class AssetService extends BaseService
                             case 'css':
                             case 'scss':
                             case 'sass':
-                                file_put_contents($destinationPath, "/***** INCLUDE: '$file' *****/\n", FILE_APPEND);
+                                file_put_contents($destinationPath, "/***** INCLUDE CSS: '$file' *****/\n", FILE_APPEND);
 
                                 if ($method === 'include') {
-                                    file_put_contents($destinationPath, "@import '$relativeFile';\n", FILE_APPEND);
+                                    file_put_contents($destinationPath, "@use '$relativeFile' as *;\n", FILE_APPEND);
                                 } elseif ($method === 'merge') {
                                     file_put_contents($destinationPath, $content."\n\n", FILE_APPEND);
                                 }
                                 break;
 
                             case 'php':
-                                file_put_contents($destinationPath, "/***** INCLUDE: '$file' *****/\n", FILE_APPEND);
+                                file_put_contents($destinationPath, "/***** INCLUDE PHP: '$file' *****/\n", FILE_APPEND);
 
                                 if ($method === 'include') {
+                                    // @todo: @include or @use?
                                     file_put_contents($destinationPath, "include ('$relativeFile');\n", FILE_APPEND);
                                 } elseif ($method === 'merge') {
                                     file_put_contents($destinationPath, $content."\n\n", FILE_APPEND);
