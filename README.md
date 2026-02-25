@@ -122,13 +122,13 @@ It will definitively run the terraform scripts for this module,
 but if the config itself has ```"update"  => false```, only new items will be created.
 
 ```
-php artisan deploy-env:terraform-modules --module_name=Market --force
+php artisan deploy-env:terraform-modules --module_name=Acl --force
 ```
 
 To force a specific version in a module even it was already processed, enter something like that:
 
 ```
-php artisan deploy-env:terraform-modules --module_name=Market --module_version=0003 --force
+php artisan deploy-env:terraform-modules --module_name=Acl --module_version=0003 --force
 ```
 
 Like migrations in laravel, successful deployed modules (and forced updates)
