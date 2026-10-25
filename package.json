@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "lodash": "^4.17.21",
+    "postcss": "^8.3.7"
+  }
+}

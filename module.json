@@ -1,0 +1,11 @@
+{
+    "name": "DeployEnv",
+    "alias": "deploy-env",
+    "description": "",
+    "keywords": [],
+    "priority": 1100,
+    "providers": [
+        "Modules\\DeployEnv\\app\\Providers\\DeployEnvServiceProvider"
+    ],
+    "files": []
+}

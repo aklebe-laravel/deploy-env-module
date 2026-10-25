@@ -1,0 +1,30 @@
+<?php
+
+namespace Modules\${{module_name}}\app\Providers;
+
+use Illuminate\Console\Scheduling\Schedule;
+use Modules\SystemBase\app\Providers\Base\ScheduleBaseServiceProvider;
+
+class ScheduleServiceProvider extends ScheduleBaseServiceProvider
+{
+    protected function bootEnabledSchedule(Schedule $schedule): void
+    {
+        //        /**
+        //         * Module ping
+        //         */
+        //        $schedule->call(function () {
+        //            Log::debug("PING (on schedule enabled)", [__METHOD__]);
+        //        })->everyFiveMinutes();
+    }
+
+    protected function bootDisabledSchedule(Schedule $schedule): void
+    {
+        //        /**
+        //         * Module ping
+        //         */
+        //        $schedule->call(function () {
+        //            Log::debug("PING (on schedule disabled)", [__METHOD__]);
+        //        })->everyFiveMinutes();
+    }
+
+}
