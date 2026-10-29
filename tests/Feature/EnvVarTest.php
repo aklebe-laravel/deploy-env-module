@@ -42,7 +42,7 @@ CACHE_PREFIX="proxtop_cache_"
 APP_KEY=base64:aIJkKw6xHZkYxjmeV6DipSlLne6siX4iNEffZk63Zu0=
 APP_DEBUG=true
 DEBUGBAR_ENABLED=true
-APP_DOMAIN="prox-top.dev.example.com"
+APP_DOMAIN="proxtop.dev.example.com"
 APP_URL="https://\${APP_DOMAIN}/\${{unknown_var_x var1='4'   var_y='abc' var_z="\${{another_var_xyz}}" }}"
 FORCE_HTTPS=true
 CONFIG_CACHE=false
@@ -67,7 +67,7 @@ CACHE_PREFIX="proxtop_cache_"
 APP_KEY=base64:aIJkKw6xHZkYxjmeV6DipSlLne6siX4iNEffZk63Zu0=
 APP_DEBUG=true
 DEBUGBAR_ENABLED=true
-APP_DOMAIN="prox-top.dev.example.com"
+APP_DOMAIN="proxtop.dev.example.com"
 APP_URL="https://$env1/\${{unknown_var_x var1='4'   var_y='abc' var_z="\${{another_var_xyz}}" }}"
 FORCE_HTTPS=true
 CONFIG_CACHE=false
