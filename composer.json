@@ -8,6 +8,9 @@
       "email": "a.klebe.work@gmail.com"
     }
   ],
+  "require": {
+    "aklebe-laravel/mercy-php-deployment": "^2.0"
+  },
   "extra": {
     "laravel": {
       "providers": [],
