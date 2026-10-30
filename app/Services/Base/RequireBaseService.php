@@ -94,6 +94,7 @@ class RequireBaseService extends BaseService
         'set_status'         => true, // false do prevent update modules_statuses.json
         'dev_mode'           => true, // true to allow ignoring changes (if not clean) repositories and continue processing
         'is_bare_deployment' => false, // use "git archive" to fast deploy without the ".git" directory (ex.: for production)
+        'keep_branches'      => false, // dev environment: an existing clone on a branch keeps it (the IDE switches branches)
     ];
 
     /**
@@ -312,6 +313,9 @@ class RequireBaseService extends BaseService
             $cloneParams['--depth'] = 1;
         }
 
+        // an existing clone (not cloned now) on a branch keeps it in the dev environment, see 'keep_branches'
+        $existingClone = is_dir($repoPath.DIRECTORY_SEPARATOR.'.git');
+
         // @todo: check git source exists on git server would be nice at this point (testRemote() not working)
         // Clone the repository if missing. Not in dev mode the repository has to be clean.
         if (!$gitService->ensureClonedRepository($repoPath, $gitSourceCurrent, !$devMode, $cloneParams)) {
@@ -336,7 +340,11 @@ class RequireBaseService extends BaseService
 
         } else {
 
-            if (($constraint = $this->constraintWithTestBranch($gitService)) === null) {
+            if ($existingClone && data_get($this->allowedProcesses, 'keep_branches', false) && $gitService->isOnBranch()) {
+                // the IDE (developer) switches branches here: keep it, only pull
+                $this->debug(sprintf("'%s' stays on its branch '%s'", $this->currentStudlyName, $gitService->getCurrentBranch()));
+                $constraint = '';
+            } elseif (($constraint = $this->constraintWithTestBranch($gitService)) === null) {
                 $this->decrementIndent();
 
                 return false;

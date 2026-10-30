@@ -594,8 +594,10 @@ class DeployEnvBase extends Command
     }
 
     /**
-     * Clones/updates the modules and themes configured in YAML 'setup.requires'.
-     * Each entry: type (module|theme), repository, vendor, branch_prefix/branch, names[], dev_mode.
+     * Clones/updates the modules and themes of YAML 'setup.requires' (the project's own), then 'setup.base_requires'
+     * (the Mercy base). A name processed once is skipped later, so the project wins.
+     * Each entry: type (module|theme), repository, vendor, version (tags, e.g. "^2.0") or branch_prefix/branch,
+     * names[], dev_mode.
      *
      * @param  string  $destinationRootPath  if given, use this as project root (to deploy to external projects), also "git archive" will be used
      *
@@ -604,8 +606,12 @@ class DeployEnvBase extends Command
      */
     public function getRequires(string $destinationRootPath = ''): bool
     {
+        $requires = [
+            ...(array) ($this->getYamlConfigValue('setup.requires', []) ?? []),
+            ...(array) ($this->getYamlConfigValue('setup.base_requires', []) ?? []),
+        ];
         // if no requires exit, but no error ...
-        if (!($requires = $this->getYamlConfigValue('setup.requires', []))) {
+        if (!$requires) {
             return true;
         }
 
@@ -644,10 +650,11 @@ class DeployEnvBase extends Command
                 return false;
             }
 
-            if ($branch = data_get($require, 'branch_prefix', '').data_get($require, 'branch', '')) {
-                $currentAddonService->currentRequiredConstraint = $branch;
+            // tags by "version" (e.g. "^2.0"), otherwise the branch
+            if ($constraint = (string) data_get($require, 'version', '') ?: data_get($require, 'branch_prefix', '').data_get($require, 'branch', '')) {
+                $currentAddonService->currentRequiredConstraint = $constraint;
             }
-            $this->comment(sprintf("Start requirement '%s' for vendor '%s' and branch '%s'", $type, $currentAddonService->getVendor(), $currentAddonService->currentRequiredConstraint));
+            $this->comment(sprintf("Start requirement '%s' for vendor '%s' and version/branch '%s'", $type, $currentAddonService->getVendor(), $currentAddonService->currentRequiredConstraint));
 
             // test branches (git.branch / git.branches, usually in project/config/local.yaml)
             $testBranch = (string) $this->getYamlConfigValue('setup.git.branch', '');
@@ -663,6 +670,8 @@ class DeployEnvBase extends Command
                 ]));
 
                 $currentAddonService->allowProcess('dev_mode', $this->getBoolValue(data_get($require, 'dev_mode')));
+                // dev environment (not the build): branches of existing clones belong to the developer
+                $currentAddonService->allowProcess('keep_branches', $this->getBoolValue($this->getYamlConfigValue('setup.kernel.dev_mode', false)));
                 $currentAddonService->allowProcess('is_bare_deployment', $destinationRootPath !== '');
 
                 if ($currentAddonService->requireItemByName($requireName, $destinationRootPath)) {
