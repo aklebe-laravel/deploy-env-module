@@ -47,6 +47,14 @@ class RequireBaseService extends BaseService
     public string $currentRequiredConstraint = 'dev-master';
 
     /**
+     * Test branches to use instead of $currentRequiredConstraint, in this order: [branch, must exist].
+     * A branch that does not exist is skipped (or fails if it must exist).
+     *
+     * @var list<array{0: string, 1: bool}>
+     */
+    public array $preferredBranches = [];
+
+    /**
      * @var string
      */
     protected string $currentVendorName = '';
@@ -328,8 +336,14 @@ class RequireBaseService extends BaseService
 
         } else {
 
+            if (($constraint = $this->constraintWithTestBranch($gitService)) === null) {
+                $this->decrementIndent();
+
+                return false;
+            }
+
             // fetch, checkout and pull (see GitService::repositoryUpdate())
-            $gitService->repositoryUpdate($this->currentRequiredConstraint, data_get($this->allowedProcesses, 'git_pull', false));
+            $gitService->repositoryUpdate($constraint, data_get($this->allowedProcesses, 'git_pull', false));
 
             $this->setStatus(true);
         }
@@ -345,6 +359,37 @@ class RequireBaseService extends BaseService
         $this->decrementIndent();
 
         return true;
+    }
+
+    /**
+     * The constraint to check out: the first test branch the remote has, otherwise $currentRequiredConstraint.
+     *
+     * @param  GitService  $gitService  with the opened repository
+     *
+     * @return string|null null if a branch that must exist is missing
+     * @throws GitException
+     */
+    protected function constraintWithTestBranch(GitService $gitService): ?string
+    {
+        if (!$this->preferredBranches) {
+            return $this->currentRequiredConstraint;
+        }
+        $gitService->repositoryFetch();
+        $remoteBranches = $gitService->getRemoteBranches() ?? [];
+        foreach ($this->preferredBranches as [$branch, $mustExist]) {
+            if (in_array($branch, $remoteBranches, true)) {
+                $this->info(sprintf("%s '%s': test branch '%s'", $this->addonType, $this->currentStudlyName, $branch));
+
+                return 'dev-'.$branch;
+            }
+            if ($mustExist) {
+                $this->error(sprintf("%s '%s': branch '%s' does not exist (git.branches)", $this->addonType, $this->currentStudlyName, $branch));
+
+                return null;
+            }
+        }
+
+        return $this->currentRequiredConstraint;
     }
 
     /**

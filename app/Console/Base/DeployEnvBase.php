@@ -649,8 +649,18 @@ class DeployEnvBase extends Command
             }
             $this->comment(sprintf("Start requirement '%s' for vendor '%s' and branch '%s'", $type, $currentAddonService->getVendor(), $currentAddonService->currentRequiredConstraint));
 
+            // test branches (git.branch / git.branches, usually in project/config/local.yaml)
+            $testBranch = (string) $this->getYamlConfigValue('setup.git.branch', '');
+            $testBranches = (array) ($this->getYamlConfigValue('setup.git.branches', []) ?? []);
+
             // loop required names (modules/themes) ...
             foreach (data_get($require, 'names', []) as $requireName) {
+
+                // a branch set for this repo must exist, the common one is used where it exists
+                $currentAddonService->preferredBranches = array_values(array_filter([
+                    isset($testBranches[$requireName]) ? [(string) $testBranches[$requireName], true] : null,
+                    $testBranch !== '' ? [$testBranch, false] : null,
+                ]));
 
                 $currentAddonService->allowProcess('dev_mode', $this->getBoolValue(data_get($require, 'dev_mode')));
                 $currentAddonService->allowProcess('is_bare_deployment', $destinationRootPath !== '');
