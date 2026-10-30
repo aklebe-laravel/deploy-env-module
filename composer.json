@@ -1,7 +1,7 @@
 {
   "name": "aklebe-laravel/deploy-env-module",
   "type": "laravel-module",
-  "description": "",
+  "description": "Deployments of modules and business imports, requirement of modules and themes and the mercy:* commands of the Mercy Scaffold.",
   "authors": [
     {
       "name": "Andreas Klebe",

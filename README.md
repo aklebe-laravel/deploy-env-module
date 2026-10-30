@@ -1,13 +1,13 @@
-## Deploy Env
+# Deploy Env
 
-A **required** module for [Mercy Scaffold Application](https://github.com/aklebe-laravel/mercy-scaffold).
+A **core** module of the [Mercy Scaffold](https://github.com/aklebe-laravel/mercy-scaffold).
 
-This module provides deployments for your environments using artisan:
-fill database data, run sql scripts, artisan or shell commands, require modules/themes by git,
-build frontend assets and import files.
+Deployments for your environments using artisan: fill database data, run sql scripts, artisan or shell commands,
+clone modules and themes by git, build frontend assets and import files. Also the generator for new modules and the
+`mercy:*` commands used by the `./mercy` CLI inside the container.
 
 Requirements: module **SystemBase**. The `mercy:*` commands and `DeployEnvBase::getDeployment()` use
-`AklebeLaravel\MercyPhpDeployment` (YAML setup configs in `resources/setup`).
+[mercy-php-deployment](https://github.com/aklebe-laravel/mercy-php-deployment), which reads the merged project config (`storage/app/last-setup/setup.yaml`).
 
 ### Config
 
@@ -38,44 +38,56 @@ the app itself by `config/module-deploy-env.php`.
 | `deploy-env:fix-gitignore`                                              | remove everything from the git index, add it again (respecting .gitignore) and commit |
 | `mercy:app {services}`                                                  | run comma separated services, see below                                               |
 | `mercy:info`                                                            | important env vars, docker hosts/ports and URLs                                       |
-| `mercy:sync-npm`                                                        | create/update proxy hosts in Nginx Proxy Manager from YAML `setup.npm.hosts`          |
+| `mercy:sync-npm [--remove]`                                             | create/update (or remove) the proxy hosts of `npm.hosts` in Nginx Proxy Manager       |
 
 #### mercy:app services
 
 `php artisan mercy:app cache,build-frontend` runs the services in the given order and stops at the first failure:
 
-| Service          | Meaning                                                                                    |
-|------------------|--------------------------------------------------------------------------------------------|
-| `cache`          | clear all caches                                                                           |
-| `ide`            | generate ide-helper files                                                                  |
-| `view`           | `view:cache`                                                                               |
-| `build-frontend` | `deploy-env:build-frontend`                                                                |
-| `update`         | composer, npm, clear caches, build frontend, optimize (depends on `setup.kernel.dev_mode`) |
-| `migrate`        | `migrate --force` and `deploy-env:terraform-modules`                                       |
-| `require`        | clone/update modules and themes of YAML `setup.requires`                                   |
-| `files`          | fix permissions of `storage` and `bootstrap/cache` (owner `WWWUSER:WWWGROUP`)              |
-| `healthy`        | permissions, check the webserver on port 80, clear config/view cache                       |
-| `test`           | print app name, version and env                                                            |
+| Service          | Meaning                                                                                 |
+|------------------|-----------------------------------------------------------------------------------------|
+| `cache`          | clear all caches                                                                        |
+| `ide`            | generate ide-helper files                                                               |
+| `view`           | `view:cache`                                                                            |
+| `build-frontend` | `deploy-env:build-frontend`                                                             |
+| `update`         | composer, npm, clear caches, build frontend, optimize (depends on `kernel.dev_mode`)    |
+| `migrate`        | `migrate --force` and `deploy-env:terraform-modules`                                    |
+| `require`        | clone/update modules and themes of `base_requires` and `requires` of the project config |
+| `files`          | fix permissions of `storage` and `bootstrap/cache` (owner `WWWUSER:WWWGROUP`)           |
+| `healthy`        | permissions, check the webserver on port 80, clear config/view cache                    |
+| `test`           | print app name, version and env                                                         |
 
 #### Require modules and themes
 
-YAML `setup.requires` lists blocks like:
+Modules and themes come from two lists of the project config (`project/config/setup.yaml`):
+
+- `base_requires`: the Mercy base modules and theme, defined by the
+  [Mercy defaults](https://github.com/aklebe-laravel/mercy-php-deployment/blob/master/resources/defaults/setup.yaml)
+  in released versions; projects normally do not touch it
+- `requires`: your own modules and themes. An entry with the same name wins over `base_requires`
 
 ```yaml
-setup:
-  requires:
-    - type: module                # or theme
-      vendor: aklebe-laravel
-      repository: "git@github.com:${{module_vendor_name}}/${{module_snake_name_git}}.git"
-      branch: "dev-master"        # or a composer constraint like "^2.0"
-      dev_mode: true              # skip repositories with local changes
-      names:
-        - system-base
-        - acl
+requires:
+  - type: "module"                # or "theme"
+    vendor: "my-org"
+    repository: 'git@github.com:${{module_vendor_name}}/${{module_snake_name_git}}.git'
+    version: "^1.0"               # released tags, or instead:
+    # branch: "master"
+    # branch_prefix: "dev-"
+    dev_mode: true                # skip repositories with local changes
+    names:
+      - "my-module"
+      - "other-module"
 ```
 
-Placeholders in `repository`: `module_vendor_name`, `module_snake_name`, `module_snake_name_git`
-(and the same with `theme_`). The git name always ends with `-module` / `-theme`.
+Use single quotes for `repository`, otherwise the placeholders break. Placeholders: `module_vendor_name`,
+`module_snake_name`, `module_snake_name_git` (and the same with `theme_`). The git name always ends with `-module` /
+`-theme`, the folder is derived from it (`my-module` → `Modules/MyModule`).
+
+Which ref a clone takes: what is already checked out stays (a clone on a branch keeps it); new clones and clones on a
+tag take `git.branch` / `git.branches.<repo>` of the machine (`project/config/local.yaml`) if the remote has that
+branch, otherwise the best tag for `version`, otherwise `branch`. Details: scaffold README
+[Workflows](https://github.com/aklebe-laravel/mercy-scaffold#workflows).
 
 Strategy (`MODULE_DEPLOYENV_REQUIRE_MODULES_STRATEGY`): `DEFAULT`/`PULL` checkout the best tag or branch and pull,
 `MERGE` checkout only, `NONE` fetch only.
