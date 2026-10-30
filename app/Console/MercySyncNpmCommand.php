@@ -15,12 +15,19 @@ class MercySyncNpmCommand extends DeployEnvBase
     /**
      * @var string
      */
-    protected $signature = 'mercy:sync-npm';
+    protected $signature = 'mercy:sync-npm
+        {--remove : Delete the proxy hosts of this installation from NPM (e.g. before "./mercy destroy")}';
+
+    /**
+     * Domains this installation created or updated in NPM, so later runs remove the ones that left the config
+     * (e.g. after a domain change) and "--remove" knows what belongs to it.
+     */
+    private const string STATE_FILE = 'app/mercy-npm-hosts.json';
 
     /**
      * @var string
      */
-    protected $description = 'Sync your Nginx Proxy Manager: creates/updates the proxy hosts of YAML "setup.npm.hosts" (config services.npm.url/user/password).';
+    protected $description = 'Sync your Nginx Proxy Manager: creates/updates the proxy hosts of YAML "setup.npm.hosts" (config services.npm.url/user/password), removes the ones of former domains.';
 
     /**
      * @return int
@@ -44,9 +51,9 @@ class MercySyncNpmCommand extends DeployEnvBase
             return CommandResult::FAILURE;
         }
 
-        // Fetch remote mappings to find IDs dynamically
+        // Fetch remote mappings to find IDs dynamically (an empty NPM is fine, everything gets created)
         $remoteHostsMap = $this->fetchRemoteHostsMap($token);
-        if (empty($remoteHostsMap)) {
+        if ($remoteHostsMap === null) {
             $this->error('Could not retrieve existing proxy hosts from NPM API.');
 
             return CommandResult::FAILURE;
@@ -54,9 +61,22 @@ class MercySyncNpmCommand extends DeployEnvBase
 
         // Parse all loaded yaml configs by resolving their values.
         $this->parseConfigs();
+        $hosts = (array) $this->getDeployment()
+            ->getConfigValue('setup.npm.hosts', []);
+        $configured = array_values(array_filter(array_map(fn($host) => (string) ($host['domain'] ?? ''), $hosts)));
+        $managed = $this->managedDomains();
 
-        $result = CommandResult::SUCCESS;
-        foreach ($this->getDeployment()->getConfigValue('setup.npm.hosts', []) as $host) {
+        if ($this->option('remove')) {
+            $result = $this->deleteHosts($token, $remoteHostsMap, array_unique([...$managed, ...$configured]));
+            $this->saveManagedDomains([]);
+
+            return $result;
+        }
+
+        // domains of an earlier run that are not configured any more (e.g. renamed): remove their hosts
+        $result = $this->deleteHosts($token, $remoteHostsMap, array_diff($managed, $configured));
+
+        foreach ($hosts as $host) {
             if (!($domain = $host['domain'] ?? '')) {
                 $this->error('Missing "domain" in npm host config.');
                 $result = CommandResult::FAILURE;
@@ -89,8 +109,56 @@ class MercySyncNpmCommand extends DeployEnvBase
 
             $this->components->info("Successfully synchronized NPM routing for {$domain}.");
         }
+        $this->saveManagedDomains($configured);
 
         return $result;
+    }
+
+    /**
+     * @param  string             $token
+     * @param  array<string,int>  $remoteHostsMap
+     * @param  iterable<string>   $domains
+     *
+     * @return int
+     * @throws \Illuminate\Http\Client\ConnectionException
+     */
+    private function deleteHosts(string $token, array $remoteHostsMap, iterable $domains): int
+    {
+        $result = CommandResult::SUCCESS;
+        foreach ($domains as $domain) {
+            if (!isset($remoteHostsMap[$domain])) {
+                continue;
+            }
+            $response = Http::withToken($token)
+                ->acceptJson()
+                ->delete(config('services.npm.url')."/nginx/proxy-hosts/{$remoteHostsMap[$domain]}");
+            if ($response->failed()) {
+                $this->error("Failed to delete the NPM host of {$domain}: ".$response->body());
+                $result = CommandResult::FAILURE;
+                continue;
+            }
+            $this->components->info("Removed the NPM host of {$domain}.");
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function managedDomains(): array
+    {
+        $file = storage_path(self::STATE_FILE);
+
+        return is_file($file) ? array_values(array_filter((array) json_decode((string) file_get_contents($file), true))) : [];
+    }
+
+    /**
+     * @param  list<string>  $domains
+     */
+    private function saveManagedDomains(array $domains): void
+    {
+        file_put_contents(storage_path(self::STATE_FILE), json_encode(array_values($domains), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
     }
 
     /**
@@ -130,16 +198,16 @@ class MercySyncNpmCommand extends DeployEnvBase
      *
      * @param  string  $token
      *
-     * @return array<string, int>
+     * @return array<string, int>|null null if NPM does not answer
      */
-    private function fetchRemoteHostsMap(string $token): array
+    private function fetchRemoteHostsMap(string $token): ?array
     {
         $response = Http::withToken($token)
             ->acceptJson()
             ->get(config('services.npm.url')."/nginx/proxy-hosts");
 
         if ($response->failed()) {
-            return [];
+            return null;
         }
 
         $map = [];
