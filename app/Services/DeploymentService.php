@@ -5,6 +5,7 @@ namespace Modules\DeployEnv\app\Services;
 use Exception;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -21,6 +22,7 @@ use Modules\SystemBase\app\Services\ParserService;
 use Nwidart\Modules\Facades\Module as ModuleFacade;
 use Nwidart\Modules\Module;
 use Symfony\Component\Console\Command\Command;
+use Throwable;
 
 /**
  * Runs the "terraform" deployments of modules, the app and business imports.
@@ -605,11 +607,15 @@ class DeploymentService extends BaseService
      * cmd 'models': every source is a PHP file returning a model definition:
      * - model: model class (required)
      * - data: list of attribute arrays (or a Closure returning it), '#sync_relations' inside a row for relations
+     *   A column like 'user.name' is resolved to the foreign key of the BelongsTo relation (user_id),
+     *   see resolveBelongsToValues(). If the related model is missing, the row is skipped.
      * - uniques: columns to find an existing model (also 'relation.column')
      * - can_create (default true), can_update (default false), ignore_update_fields (not overwritten on update)
      * - unique_separator (default ','): a unique column value like 'david,uwe' (or an array) creates/updates
      *   one model per value with the same data and relations; false disables splitting strings
      * - relations: see createOrUpdateRelations()
+     * - after_save: callable like fn(Model $model, array $row), called after every created/updated row
+     *   (like copying files), errors are logged and the import continues
      * - auto_delete: list of values of the unique column(s) to delete
      *
      * @param  string  $cmd
@@ -655,6 +661,13 @@ class DeploymentService extends BaseService
             // rows with multiple unique values (like 'name' => 'david,uwe') become one row per value
             $modelList = $this->expandMultiUniqueRows($modelList, $uniqueColumns, data_get($scriptResult, 'unique_separator', ','));
             $relationsDefinitions = data_get($scriptResult, 'relations', []);
+            $afterSave = $scriptResult['after_save'] ?? null;
+            if ($afterSave !== null && !is_callable($afterSave)) {
+                $this->error("Parameter after_save is not callable!", ['script' => $script]);
+                $this->decrementIndent();
+
+                return false;
+            }
             $updateCount = 0;
             $createdCount = 0;
 
@@ -662,7 +675,12 @@ class DeploymentService extends BaseService
             // run all data rows ...
             foreach ($modelList as $modelData) {
                 $preparedUniqueData = $this->getPreparedUniqueData($modelData, $uniqueColumns);
-                $cleanedModelData = $this->cleanedModelData($modelData);
+                // columns like 'user.name' become 'user_id'
+                $cleanedModelData = $this->resolveBelongsToValues(app($modelName), $this->cleanedModelData($modelData));
+                if ($cleanedModelData === null) {
+                    $this->error("Row skipped, related model not found.", ['script' => $script, 'unique' => $preparedUniqueData]);
+                    continue;
+                }
                 // decide update or create ...
                 if ($modelFound = $this->loadModelByData($modelName, $modelData, $preparedUniqueData)) {
                     if (data_get($scriptResult, 'can_update', false)) {
@@ -678,12 +696,14 @@ class DeploymentService extends BaseService
 
                         $modelFound->update($cleanedModelData);
                         $this->createOrUpdateRelations($modelFound, $modelData, $relationsDefinitions);
+                        $this->callAfterSave($afterSave, $modelFound, $modelData);
                         $updateCount++;
                     } // else no update wanted when already exist
                 } else {
                     if (data_get($scriptResult, 'can_create', true)) {
                         $newModel = app($modelName)->create($cleanedModelData);
                         $this->createOrUpdateRelations($newModel, $modelData, $relationsDefinitions);
+                        $this->callAfterSave($afterSave, $newModel, $modelData);
                         $createdCount++;
                     }
                 }
@@ -713,7 +733,8 @@ class DeploymentService extends BaseService
      * Relation definition: ['method' => 'relationMethod', 'columns' => [...], 'auto_delete' => bool]
      * - HasMany (has upsert()): every item is a row of the related model, 'columns' are the unique keys
      *   (with the parent foreign key). 'relation.column' (like 'vm.extern_vm_id') is resolved to the foreign key id.
-     *   auto_delete removes related rows not listed.
+     *   Other 'relation.column' values (like 'mediaItem.name') are resolved too, but a missing related model
+     *   only leaves this column out. auto_delete removes related rows not listed.
      * - BelongsToMany (sync()): every item is a value (or list of values) for 'columns' to find related models.
      *   auto_delete uses sync(), otherwise syncWithoutDetaching().
      * - BelongsTo (associate()): like above, the found model is associated and $model is saved.
@@ -783,6 +804,10 @@ class DeploymentService extends BaseService
                             }
                         }
                     }
+
+                    // Other 'relation.column' values (no unique keys) like 'mediaItem.name' => media_item_id.
+                    // A missing related model is logged and the column is left out (the row is still saved).
+                    $rowValues = $this->resolveBelongsToValues($relatedModelInstance, $rowValues, false);
 
                     $preparedUpsertRows[] = $rowValues;
                 }
@@ -871,6 +896,91 @@ class DeploymentService extends BaseService
         }
 
         return true;
+    }
+
+    /**
+     * Replaces keys like 'user.name' => 'andi' by the foreign key of the BelongsTo relation: 'user_id' => 5.
+     * The related model is searched by the column after the dot. Several keys of the same relation
+     * (like 'notificationTemplate.code' and 'notificationTemplate.notification_channel') search together (AND).
+     * If all values of a relation are null, the foreign key is set to null.
+     *
+     * @param  Model  $model   model owning the relations (the model to save or the related model of a HasMany)
+     * @param  array  $values  column values (without keys starting with '#')
+     * @param  bool   $strict  true: return null if a relation can't be resolved, false: log it and leave the keys out
+     *
+     * @return array|null  null if $strict and a relation could not be resolved
+     */
+    protected function resolveBelongsToValues(Model $model, array $values, bool $strict = true): ?array
+    {
+        // collect like ['user' => ['name' => 'andi']]
+        $searchByRelation = [];
+        foreach ($values as $key => $value) {
+            if (!is_string($key) || !str_contains($key, '.')) {
+                continue;
+            }
+
+            unset($values[$key]);
+            [$relationName, $column] = explode('.', $key, 2);
+            $searchByRelation[$relationName][$column] = $value;
+        }
+
+        foreach ($searchByRelation as $relationName => $search) {
+            $label = $relationName.'.'.implode(',', array_keys($search));
+            $relation = method_exists($model, $relationName) ? $model->$relationName() : null;
+
+            if (!($relation instanceof BelongsTo)) {
+                $this->error(sprintf("Column '%s': %s::%s() is no BelongsTo relation", $label, get_class($model), $relationName));
+                if ($strict) {
+                    return null;
+                }
+                continue;
+            }
+
+            if (!array_filter($search, fn($v) => $v !== null)) {
+                $values[$relation->getForeignKeyName()] = null;
+                continue;
+            }
+
+            $builder = $relation->getRelated()->newQuery();
+            foreach ($search as $column => $value) {
+                $builder->where($column, $value);
+            }
+
+            if (!($related = $builder->first())) {
+                $this->error(sprintf("Column '%s': %s with %s not found",
+                    $label, get_class($relation->getRelated()), json_encode($search, JSON_UNESCAPED_UNICODE)));
+                if ($strict) {
+                    return null;
+                }
+                continue;
+            }
+
+            $values[$relation->getForeignKeyName()] = $related->{$relation->getOwnerKeyName()};
+        }
+
+        return $values;
+    }
+
+    /**
+     * Calls the 'after_save' callable of a model definition. Exceptions are logged, the import continues.
+     *
+     * @param  callable|null  $afterSave
+     * @param  Model          $model
+     * @param  array          $modelData  the complete row (also keys starting with '#')
+     *
+     * @return void
+     */
+    protected function callAfterSave(?callable $afterSave, Model $model, array $modelData): void
+    {
+        if (!$afterSave) {
+            return;
+        }
+
+        try {
+            $afterSave($model, $modelData);
+        } catch (Throwable $ex) {
+            $this->error(sprintf("after_save failed for %s #%s: %s", get_class($model), $model->getKey(), $ex->getMessage()));
+        }
     }
 
     /**

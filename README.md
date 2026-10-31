@@ -214,6 +214,11 @@ return [
     'unique_separator'     => ',',
     // values of the unique column(s) to delete
     'auto_delete'          => ['old@my-domain.de'],
+    // called after every created/updated row (not for skipped rows), like copying files
+    // errors are logged, the import continues
+    'after_save'           => function (\Illuminate\Database\Eloquent\Model $model, array $row) {
+        // $row is the complete row, also keys starting with '#' like '#file'
+    },
     // relations to update/create by '#sync_relations' in the data rows
     'relations'            => [
         'observeItems' => [
@@ -262,6 +267,26 @@ How a row is processed:
 3. Not found: create it if `can_create` is true, otherwise skip the row silently (useful if models are created elsewhere, like users imported by LDAP/Authentik).
 4. Create/update the relations listed in `relations` by the row's `#sync_relations`.
    Keys starting with `#` are never written to the model.
+5. Call `after_save` (if created or updated).
+
+##### Related models by column (`relation.column`)
+
+A column like `'user.name' => 'andi'` is resolved by the `BelongsTo` relation `user()`: the user with
+`name = 'andi'` is searched and its id is written to the foreign key (`user_id`). Several columns of the same
+relation search together, like `'notificationTemplate.code'` and `'notificationTemplate.notification_channel'`.
+`null` (all columns of the relation) sets the foreign key to `null`. The same notation in `uniques` finds existing models.
+
+```php
+'model'   => \Modules\WebsiteBase\app\Models\MediaItem::class,
+'uniques' => ['user.name', 'name'],
+'data'    => [
+    ['user.name' => 'andi', 'name' => 'gitea', 'media_type' => 'IMAGE'],
+],
+```
+
+- In a data row: if the related model is missing, an error is logged and the row is skipped.
+- In a `HasMany` row of `#sync_relations` (not listed in `columns`, like `'mediaItem.name' => 'gitea'`):
+  if the related model is missing, an error is logged and only this column is left out, the row is still saved.
 
 ##### Multiple models by one row
 
